@@ -7,8 +7,8 @@
 .vscode/
 *.iml
 
-# 临时工作目录
-/tmp/openclaw/
+# Git仓库缓存目录
+code/
 
 # 测试输出
 test-output/
