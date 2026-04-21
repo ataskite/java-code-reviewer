@@ -13,3 +13,6 @@ code/
 # 测试输出
 test-output/
 *.test
+
+# Claude Code 配置目录
+.claude/
