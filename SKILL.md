@@ -615,6 +615,8 @@ B) ❌ 取消 — 取消本次审查
 | 审查范围 | {REVIEW_SCOPE} |
 | 审查模式 | {REVIEW_MODE} |
 | 飞书上传选项 | {FEISHU_UPLOAD_OPTION} |
+| 审查文件数量 | {REVIEW_FILE_COUNT} |
+| 审查代码行数 | {REVIEW_LINE_COUNT} |
 
 ### 项目概况（预扫描结果）
 {PROJECT_SCAN_RESULT}
@@ -650,6 +652,8 @@ B) ❌ 取消 — 取消本次审查
 | `REVIEW_MODE` | 交互步骤4用户选择 / 快速启动 `--mode` | `fast` / `standard` / `deep` / `security` |
 | `FEISHU_UPLOAD_OPTION` | 交互步骤5用户选择 / 快速启动 `--upload` | `仅显示报告` / `上传到云文档` / `上传到多维表格` / `同时上传两者` / `lark-cli未安装` |
 | `PROJECT_SCAN_RESULT` | 预扫描完整输出 | 项目概况、模块结构的原始输出 |
+| `REVIEW_FILE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | 本次审查涉及的 Java 文件数量（如 `76`） |
+| `REVIEW_LINE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | 本次审查涉及的代码总行数（如 `16637`） |
 | `GIT_LOG_OUTPUT` | 条件生成（见下方） | `git log --oneline -N` 的输出 |
 | `CHANGED_FILES_OUTPUT` | 条件生成（仅增量审查） | `git diff --name-only` 的输出，变更文件路径列表 |
 | `DIFF_STATS_OUTPUT` | 条件生成（仅增量审查） | `git diff --stat` 的输出，各文件改动行数统计 |
