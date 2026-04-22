@@ -8,7 +8,7 @@
 - **4 种审查模式**：fast（快速扫雷）、standard（日常推荐）、deep（大版本上线）、security（安全专项）
 - **2 种审查类型**：增量审查（最近 N 次提交）、存量审查（全量/指定模块）
 - **2 种使用模式**：交互式（逐步引导）、快速启动（自动化/CI/CD）
-- **飞书集成**：审查报告上传云文档、问题清单录入多维表格（可选）
+- **飞书集成**：审查报告上传云文档、问题清单录入多维表格（可选，依赖 lark-cli）
 - **纯 Bash 实现**：无 Python 依赖，兼容 macOS/Linux 标准环境
 
 ## 安装
@@ -18,7 +18,6 @@
 - OpenClaw 已安装并运行
 - Bash 3.0+ 环境（macOS / Linux）
 - 系统已安装 `git` 命令
-- `jq`（可选，用于飞书插件检测的 JSON 解析）
 
 ### 安装步骤
 
@@ -61,17 +60,25 @@ git clone <repo-url> ~/.openclaw/workspace-coding/skills/java-code-reviewer
 
 如果技能正确加载，OpenClaw 会自动识别并进入审查流程。
 
-### 可选：飞书插件安装
+### 可选：lark-cli 安装
 
-如需使用飞书上传功能（云文档/多维表格），需安装以下任一飞书插件：
+如需使用飞书上传功能（云文档/多维表格），需安装 `lark-cli`：
 
-| 插件名 | 说明 |
-|--------|------|
-| `openclaw-lark` | 飞书官方插件 |
-| `feishu` | openclaw 飞书社区插件 |
-| `openclaw-wkzj` | 企业内部插件 |
+```bash
+# 安装 CLI
+npm install -g @larksuite/cli
 
-三者安装任一即可，未安装时不影响审查功能，仅无法上传飞书。
+# 安装 CLI Skills（必需，包含 lark-doc、lark-base 等）
+npx skills add larksuite/cli -y -g
+
+# 配置应用凭证（仅需一次）
+lark-cli config init
+
+# 登录授权
+lark-cli auth login --recommend
+```
+
+未安装 lark-cli 不影响审查功能，仅无法上传飞书。详细安装指南见 [lark-cli README](https://github.com/larksuite/cli/blob/main/README.zh.md)。
 
 ---
 
@@ -88,13 +95,13 @@ git clone <repo-url> ~/.openclaw/workspace-coding/skills/java-code-reviewer
 ```
 
 交互流程：
-1. **预扫描**（自动）：项目识别 → 分支探测 → 项目扫描 → 飞书插件检测
+1. **预扫描**（自动）：项目识别 → 分支探测 → 项目扫描 → lark-cli 检测
 2. **逐步确认**（严格单步交互）：
    - 选择分支（条件步骤，仅多分支时询问）
    - 选择审查类型（增量/存量）
    - 选择审查范围（条件步骤，取决于审查类型和项目类型）
    - 选择审查模式（fast/standard/deep/security）
-   - 选择飞书上传选项（条件步骤，仅飞书插件已安装时询问）
+   - 选择飞书上传选项（条件步骤，仅 lark-cli 已安装时询问）
    - 确认执行计划
 3. 确认后启动子 Agent 执行审查
 
@@ -191,7 +198,7 @@ bash scripts/phase2-detect-branches.sh "/path/to/project"
 # 项目预扫描
 bash scripts/phase3-project-scan.sh "/path/to/project"
 
-# 飞书插件检测
+# lark-cli 检测
 bash scripts/phase4-detect-lark-plugin.sh
 ```
 

@@ -51,7 +51,7 @@
   - 增量审查时：`最近N次提交`（同时会提供增量提交记录）
 - **审查模式**（`REVIEW_MODE`）：`fast` / `standard` / `deep` / `security`
 - **飞书上传选项**（`FEISHU_UPLOAD_OPTION`）：
-  - `仅显示报告` 或 `插件未安装`：不执行飞书上传步骤
+  - `仅显示报告` 或 `lark-cli未安装`：不执行飞书上传步骤
   - `上传到云文档`：执行第四步（上传云文档）
   - `上传到多维表格`：执行第五步（创建多维表格）
   - `同时上传两者`：执行第四步和第五步
@@ -270,8 +270,11 @@ spring:
 
 **目的**：将审查报告持久化到飞书云文档，方便团队查看和追溯。
 
+**⚠️ 强制要求**：必须通过 `lark-cli` 命令行工具配合 `lark-doc` skill 执行上传操作。**禁止使用 `feishu_create_doc` 等旧版工具**。
+
 **执行步骤**：
-1. 使用 `feishu_create_doc` 工具创建云文档
+1. 使用 `Skill` 工具调用 `lark-doc` skill 创建云文档
+   - 操作：从 Markdown 创建文档（`+create`）
    - 文档标题格式：`🛡️ Java 代码审查报告 - {PROJECT_NAME} - {REVIEW_MODE}模式 - {日期}`
    - 文档内容：完整的审查报告（Markdown 格式）
 2. 等待文档创建完成，获取文档链接
@@ -289,6 +292,8 @@ spring:
 **前置条件**：`FEISHU_UPLOAD_OPTION` 为 `上传到多维表格` 或 `同时上传两者`，且审查报告生成完毕。
 
 **目的**：将扫描出的所有问题录入飞书多维表格，方便团队跟踪修复进度，并支持按技术栈筛选和统计。
+
+**⚠️ 强制要求**：必须通过 `lark-cli` 命令行工具配合 `lark-base` skill 执行多维表格操作。**禁止使用 `feishu_bitable_app`、`feishu_bitable_app_table`、`feishu_bitable_app_table_record`、`feishu_bitable_app_table_field`、`feishu_bitable_app_table_view` 等旧版工具**。
 
 **固定字段定义**（共 18 个字段）：
 
@@ -321,7 +326,7 @@ spring:
 
 #### 5.1 创建多维表格应用
 
-使用 `feishu_bitable_app` 工具创建多维表格：
+使用 `Skill` 工具调用 `lark-base` skill 创建多维表格（`+base-create`）：
 - 应用名称格式：`📋 代码审查问题清单 - {PROJECT_NAME} - {日期}`
 - 创建后会返回 `app_token` 和 `default_table_id`
 
@@ -329,7 +334,7 @@ spring:
 
 #### 5.2 创建数据表（一次性定义所有字段）
 
-使用 `feishu_bitable_app_table` 工具创建**新数据表**（不要使用默认表），表名：`问题清单`。
+使用 `Skill` 工具调用 `lark-base` skill 创建**新数据表**（`+table-create`，不要使用默认表），表名：`问题清单`。
 
 **完整字段配置（必须完整传入，不可省略）**：
 ```json
@@ -391,7 +396,7 @@ spring:
 
 #### 5.3 删除默认表
 
-使用 `feishu_bitable_app_table` 工具删除 5.1 创建应用时自动生成的默认表：
+使用 `Skill` 工具调用 `lark-base` skill 删除 5.1 创建应用时自动生成的默认表（`+table-delete`）：
 ```json
 {
   "action": "delete",
@@ -404,7 +409,7 @@ spring:
 
 #### 5.4 录入问题数据
 
-使用 `feishu_bitable_app_table_record` 工具的 `batch_create` 操作，将所有问题批量录入多维表格：
+使用 `Skill` 工具调用 `lark-base` skill 的 `+record-batch-create` 操作，将所有问题批量录入多维表格：
 
 - 遍历报告中所有级别的问题（P0、P1、P2、待确认、P3）
 - 每个问题创建一条记录
@@ -473,7 +478,7 @@ spring:
 
 #### 策略 B：未上传飞书 → 完整报告输出
 
-当 `FEISHU_UPLOAD_OPTION` 为 `仅显示报告` 或 `插件未安装` 时，没有外部持久化载体，**必须将第三步生成的完整审查报告原样输出**，确保用户能直接在对话中看到所有细节。格式为：
+当 `FEISHU_UPLOAD_OPTION` 为 `仅显示报告` 或 `lark-cli未安装` 时，没有外部持久化载体，**必须将第三步生成的完整审查报告原样输出**，确保用户能直接在对话中看到所有细节。格式为：
 
 ```
 {第三步生成的完整审查报告，包含所有章节：审查配置快照、执行摘要、各级别问题详情、修复优先级、总结等}
@@ -743,7 +748,7 @@ spring:
 - 3 个关键行动项
 
 **审查人**: OpenClaw Java 代码审查 Agent (`java-code-reviewer`)
-**报告版本**: 5.0
+**报告版本**: 5.3
 **审查模式**: [fast / standard / deep / security]
 
 ---
@@ -754,8 +759,8 @@ spring:
 1. **直接使用外部参数**：审查参数由主agent注入，不得再次询问用户或调用交互工具（如文本选项交互工具）
 2. **禁止用户交互**：本agent不负责用户交互，所有配置已确定，直接执行审查
 3. **时间戳必须通过工具获取**：所有日期相关的毫秒时间戳（如审查日期），**必须**通过 `exec` 执行 `date +%s%3N` 获取实际值
-4. **按参数控制飞书上传**：严格按照 `FEISHU_UPLOAD_OPTION` 决定是否执行第四步/第五步，`仅显示报告` 或 `插件未安装` 时跳过
-4. **返回结构化汇总**：执行完成后必须输出第六步的汇总格式，作为返回给主agent的结果
+4. **按参数控制飞书上传**：严格按照 `FEISHU_UPLOAD_OPTION` 决定是否执行第四步/第五步，`仅显示报告` 或 `lark-cli未安装` 时跳过。上传飞书云文档必须使用 `lark-doc` skill，上传多维表格必须使用 `lark-base` skill，均通过 `lark-cli` 执行。**禁止使用 `feishu_create_doc`、`feishu_bitable_app` 等旧版工具**
+5. **返回结构化汇总**：执行完成后必须输出第六步的汇总格式，作为返回给主agent的结果
 5. **强制中文输出**：所有交互和报告都必须使用中文
 6. **具体明确**：按问题类型选择合适粒度定位；代码级问题优先 `文件名:行号`，配置或架构级问题可使用符号、配置键或调用链
 7. **证据优先**：每个问题的证据必须是实际代码片段（5-20行），在问题行行尾加 `// ← 注释` 标注。禁止用纯文字描述代替代码，禁止贴代码不加注释

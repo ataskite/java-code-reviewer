@@ -4,7 +4,7 @@
 
 ```
 java-code-reviewer/
-├── SKILL.md                      # ⭐ 主技能定义文档（1084行）
+├── SKILL.md                      # ⭐ 主技能定义文档（1086行）
 │   ├── 用途与触发场景
 │   ├── 快速启动模式（参数规范 + 校验规则）
 │   ├── 完整工作流程
@@ -26,7 +26,7 @@ java-code-reviewer/
 ├── .gitignore                    # Git 忽略规则
 │
 ├── prompts/                      # 🤖 子Agent提示词目录
-│   └── java-code-reviewer.md     # 子Agent完整提示词（754行）
+│   └── java-code-reviewer.md     # 子Agent完整提示词（811行）
 │       ├── 审查原则
 │       ├── 审查模式定义（模式×维度矩阵）
 │       ├── 外部参数注入规范
@@ -51,7 +51,7 @@ java-code-reviewer/
 │   ├── phase3-project-scan.sh    # 项目预扫描
 │   │   └── 输入：PROJECT_DIR → 输出：PROJECT_TYPE + MODULE列表
 │   │
-│   ├── phase4-detect-lark-plugin.sh # 飞书插件检测
+│   ├── phase4-detect-lark-plugin.sh # lark-cli 检测
 │   │   └── 输入：无 → 输出：LARK_PLUGIN_INSTALLED
 │   │
 │   └── phase6-prepare-incremental.sh # 增量审查预处理
@@ -93,6 +93,7 @@ java-code-reviewer/
 │  │  → phase2-detect-branches.sh → 分支列表                  │  │
 │  │  → phase3-project-scan.sh → PROJECT_TYPE + MODULES       │  │
 │  │  → phase4-detect-lark-plugin.sh → LARK_PLUGIN_INSTALLED  │  │
+│  │    (检测 lark-cli 是否安装)                              │  │
 │  │  → 输出：预扫描摘要                                      │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                               │                                 │
@@ -145,14 +146,15 @@ java-code-reviewer/
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Step 4: 上传飞书云文档（条件）                         │  │
-│  │  → feishu_create_doc                                   │  │
+│  │  → lark-cli + lark-doc skill (+create)                 │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Step 5: 创建飞书多维表格（条件）                       │  │
-│  │  → feishu_bitable_app (创建应用)                        │  │
-│  │  → feishu_bitable_app_table (18字段定义)               │  │
-│  │  → feishu_bitable_app_table_record (批量录入)          │  │
-│  │  → 删除默认表 (消除空白列干扰)                          │  │
+│  │  → lark-cli + lark-base skill                          │  │
+│  │    → +base-create (创建应用)                            │  │
+│  │    → +table-create (18字段定义)                        │  │
+│  │    → +table-delete (删除默认表)                        │  │
+│  │    → +record-batch-create (批量录入)                   │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Step 6: 输出最终汇总                                   │  │
@@ -246,7 +248,7 @@ java-code-reviewer/
          │  2. 确定审查范围                │
          │  3. 执行代码扫描                │
          │  4. 生成审查报告                │
-         │  5. 上传飞书（可选）            │
+         │  5. 上传飞书（可选, lark-cli）  │
          │  6. 返回结果汇总                │
          └─────────────────────────────────┘
                            │
@@ -272,7 +274,7 @@ java-code-reviewer/
 - `find` - 文件查找
 - `grep` - 内容搜索
 - `date` - 时间获取（使用 `date +%s%3N`）
-- `jq` - JSON解析（可选，用于飞书插件检测）
+- `lark-cli` - 飞书 CLI 工具（可选，用于上传云文档和多维表格）
 
 ### 无外部语言依赖
 - ✅ **无Python依赖** - 所有时间戳使用 `date +%s%3N` 获取
@@ -339,7 +341,7 @@ java-code-reviewer/
 | phase2-detect-branches.sh | 二A | PROJECT_DIR | 分支列表 |
 | phase2-switch-branch.sh | 二C | PROJECT_DIR + 分支 | 切换结果 |
 | phase3-project-scan.sh | 三 | PROJECT_DIR | PROJECT_TYPE + MODULES |
-| phase4-detect-lark-plugin.sh | 四 | 无 | LARK_PLUGIN_INSTALLED |
+| phase4-detect-lark-plugin.sh | 四 | 无 | LARK_PLUGIN_INSTALLED (检测 lark-cli) |
 | phase6-prepare-incremental.sh | 六 | PROJECT_DIR + N | GIT_LOG + FILES + STATS |
 
 **关键特点**：
@@ -399,7 +401,7 @@ java-code-reviewer/
 • 模式判定                  • 代码审查
 • 预扫描编排                • 问题发现
 • 交互式确认(纯文本)        • 报告生成
-• 快速启动参数校验          • 飞书上传
+• 快速启动参数校验          • 飞书上传(lark-cli)
 • 参数准备与注入            • 结果汇总
 • 结果展示
 ```
@@ -445,7 +447,7 @@ java-code-reviewer/
 
 **优势**：
 - 审查框架独立维护
-- Agent提示词精简（754行）
+- Agent提示词精简（811行）
 - 版本同步机制清晰
 - 修改框架不影响提示词结构
 
@@ -488,6 +490,7 @@ FEISHU_UPLOAD_OPTION  # 飞书上传选项
 | 5.2 | 预扫描阶段重构 | 4脚本合并为统一的预扫描阶段 |
 | 5.2 | 新增快速启动模式 | 支持定时任务/CI/CD自动化场景 |
 | 5.2 | 强化交互式确认规则 | 工具禁用 + 严格单步执行 + 反例 |
+| 5.3 | 飞书上传迁移至 lark-cli | 移除旧版 feishu_ 工具依赖，统一使用 lark-cli + lark-doc/lark-base skills |
 
 ---
 
@@ -503,10 +506,12 @@ SKILL.md
 prompts/java-code-reviewer.md
   ├── 引用 → references/review-framework.md
   ├── 注入 → 外部参数（由主Agent提供）
+  ├── 飞书云文档上传 → lark-cli + lark-doc skill
+  ├── 多维表格操作 → lark-cli + lark-base skill
   └── 定义 → 多维表格18字段（含3个预留修复字段）
 
 scripts/*.sh
-  └── 独立执行 → 系统命令 (git, find, jq, date等)
+  └── 独立执行 → 系统命令 (git, find, date等; lark-cli 仅检测安装状态)
 
 references/review-framework.md
   └── 独立维护 → 审查标准定义
@@ -549,8 +554,33 @@ references/review-framework.md
 
 ---
 
-*架构文档版本：5.2*
-*最后更新：2026-04-20*
+*架构文档版本：5.3*
+*最后更新：2026-04-22*
+
+## 🆕 版本 5.3 更新说明
+
+### 飞书上传迁移至 lark-cli
+
+将飞书集成从旧版 `feishu_*` MCP 工具迁移至 `lark-cli` 命令行工具及配套 skills：
+
+**检测阶段变更**：
+- 移除对 openclaw-feishu / openclaw-wkzj 插件的检测
+- `phase4-detect-lark-plugin.sh` 改为仅检测 `lark-cli` 是否安装（`command -v lark-cli`）
+- 移除对 `jq` 的依赖（不再解析 openclaw.json）
+
+**上传工具变更**：
+- 上传飞书云文档：从 `feishu_create_doc` 迁移至 `lark-cli` + `lark-doc` skill（`+create`）
+- 上传多维表格：从 `feishu_bitable_*` 系列工具迁移至 `lark-cli` + `lark-base` skill（`+base-create`、`+table-create`、`+table-delete`、`+record-batch-create`）
+
+**lark-cli 安装**：
+```bash
+npm install -g @larksuite/cli
+npx skills add larksuite/cli -y -g
+```
+
+详细安装指南见 [lark-cli README](https://github.com/larksuite/cli/blob/main/README.zh.md)。
+
+---
 
 ## 🆕 版本 5.2 更新说明
 

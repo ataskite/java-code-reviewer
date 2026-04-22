@@ -67,7 +67,7 @@ description: Java代码审查、代码检查、发现Bug和安全漏洞、性能
 2. **参数值校验**：每个参数的值必须在合法取值范围内，不合法立即报错
 3. **条件必填校验**：根据 `--type` 的值校验 `--scope` 是否缺失
 4. **分支存在性校验**：`--branch` 指定的分支如果不存在，报错并列出可用分支
-5. **飞书插件校验**：如果 `--upload` 不是 `no` 但未检测到任何飞书插件，警告并降级为 `仅显示报告`
+5. **lark-cli 校验**：如果 `--upload` 不是 `no` 但未检测到 lark-cli，警告并降级为 `仅显示报告`
 
 **校验失败时的输出格式**：
 
@@ -88,7 +88,7 @@ description: Java代码审查、代码检查、发现Bug和安全漏洞、性能
 ### 快速启动模式下的执行流程
 
 ```
-预扫描阶段                  → 正常执行（项目识别 + 分支探测 + 项目扫描 + 飞书插件检测）
+预扫描阶段                  → 正常执行（项目识别 + 分支探测 + 项目扫描 + lark-cli 检测）
 参数校验                    → 校验所有必填参数，失败则终止
 交互式确认                  → ⏭️ 完全跳过
 阶段六：代码审查            → 直接执行（不展示执行计划确认）
@@ -146,7 +146,7 @@ description: Java代码审查、代码检查、发现Bug和安全漏洞、性能
 
 ### 预扫描阶段（自动执行，在第一次用户交互前全部完成）
 
-**目标**：在用户等待期间，一次性完成项目识别、分支探测、项目扫描和飞书插件检测，收集所有后续交互所需的环境数据。
+**目标**：在用户等待期间，一次性完成项目识别、分支探测、项目扫描和 lark-cli 检测，收集所有后续交互所需的环境数据。
 
 **⚠️ 核心原则**：此阶段所有脚本按顺序自动执行，**不与用户交互**，全部完成后统一输出预扫描摘要，然后进入交互阶段。
 
@@ -186,7 +186,7 @@ bash scripts/phase3-project-scan.sh "$PROJECT_DIR"
 - `MODULE:模块名|相对路径|Java文件数|代码行数`
 - 项目概况和模块树的可视化展示
 
-**步骤 4：飞书插件检测**
+**步骤 4：lark-cli 检测**
 
 ```bash
 bash scripts/phase4-detect-lark-plugin.sh
@@ -194,7 +194,9 @@ bash scripts/phase4-detect-lark-plugin.sh
 
 脚本输出：
 - `LARK_PLUGIN_INSTALLED=true|false`
-- `LARK_PLUGIN_NAME=<插件名>`（仅当 `LARK_PLUGIN_INSTALLED=true` 时输出）
+- `LARK_PLUGIN_NAME=lark-cli`（仅当 `LARK_PLUGIN_INSTALLED=true` 时输出）
+
+> **说明**：飞书上传功能依赖 `lark-cli` 命令行工具及配套的 `lark-doc`（云文档）和 `lark-base`（多维表格）两个 skill。此处仅检测 `lark-cli` 是否安装，子 agent 执行上传时会自动调用对应的 skill。
 
 #### 预扫描摘要输出
 
@@ -219,7 +221,7 @@ bash scripts/phase4-detect-lark-plugin.sh
 - 模块数量：{K} 个
 - 模块列表：{模块1名称}({n1}类), {模块2名称}({n2}类), ...
 
-🔌 飞书插件：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ {LARK_PLUGIN_NAME} 已安装" / false 时显示 "⚠️ 未安装"}
+🔌 lark-cli：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ lark-cli 已安装" / false 时显示 "⚠️ 未安装"}
 ```
 
 > **注意**：
@@ -477,19 +479,19 @@ D) security — 安全专项，聚焦安全核心维度
 
 #### 步骤5：选择飞书上传选项（条件步骤）
 
-**判断逻辑**（基于预扫描的飞书插件检测结果）：
+**判断逻辑**（基于预扫描的 lark-cli 检测结果）：
 
 | 条件 | 动作 |
 |------|------|
 | `LARK_PLUGIN_INSTALLED=true` | **必须询问** |
-| `LARK_PLUGIN_INSTALLED=false` | **跳过此步骤**，自动设 `FEISHU_UPLOAD_OPTION=插件未安装` |
+| `LARK_PLUGIN_INSTALLED=false` | **跳过此步骤**，自动设 `FEISHU_UPLOAD_OPTION=lark-cli未安装` |
 
-> 跳过时：在上一条用户回复的确认中简短说明跳过原因（如"未检测到飞书插件，跳过飞书上传选项"），然后继续到步骤6。**跳过本身也需要一个输出，不能静默跳过。**
+> 跳过时：在上一条用户回复的确认中简短说明跳过原因（如"未检测到 lark-cli，跳过飞书上传选项"），然后继续到步骤6。**跳过本身也需要一个输出，不能静默跳过。**
 
 **仅输出以下选项文本，然后立即停止输出，等待用户输入**：
 
 ```
-📌 [飞书上传] 检测到飞书插件（{LARK_PLUGIN_NAME}），请选择审查结果的处理方式
+📌 [飞书上传] 检测到 lark-cli 已安装，请选择审查结果的处理方式
 
 A) 仅显示报告 — 只在聊天中显示完整审查报告
 B) 上传到云文档 — 审查报告上传到飞书云文档，聊天中显示精简摘要
@@ -552,7 +554,7 @@ B) ❌ 取消 — 取消本次审查
 ⏱️ 预估耗时：{预估时间}
 📌 子代理将独立执行完整审查流程，完成后自动返回结果。
 
-{FEISHU_UPLOAD_OPTION 不是「仅显示报告」/「插件未安装」时，追加以下行}
+{FEISHU_UPLOAD_OPTION 不是「仅显示报告」/「lark-cli未安装」时，追加以下行}
 📤 审查完成后将自动上传到飞书（{FEISHU_UPLOAD_OPTION}），无需手动操作。
 
 💡 温馨提示：审查期间您可以继续使用 OpenClaw 进行其他操作。
@@ -627,7 +629,7 @@ B) ❌ 取消 — 取消本次审查
 | `REVIEW_TYPE` | 交互步骤2用户选择 / 快速启动 `--type` | `增量审查` / `存量审查` |
 | `REVIEW_SCOPE` | 交互步骤3用户选择 / 快速启动 `--scope` | `最近5次提交` / `全量代码` / `user-service,order-service` |
 | `REVIEW_MODE` | 交互步骤4用户选择 / 快速启动 `--mode` | `fast` / `standard` / `deep` / `security` |
-| `FEISHU_UPLOAD_OPTION` | 交互步骤5用户选择 / 快速启动 `--upload` | `仅显示报告` / `上传到云文档` / `上传到多维表格` / `同时上传两者` / `插件未安装` |
+| `FEISHU_UPLOAD_OPTION` | 交互步骤5用户选择 / 快速启动 `--upload` | `仅显示报告` / `上传到云文档` / `上传到多维表格` / `同时上传两者` / `lark-cli未安装` |
 | `PROJECT_SCAN_RESULT` | 预扫描完整输出 | 项目概况、模块结构的原始输出 |
 | `GIT_LOG_OUTPUT` | 条件生成（见下方） | `git log --oneline -N` 的输出 |
 | `CHANGED_FILES_OUTPUT` | 条件生成（仅增量审查） | `git diff --name-only` 的输出，变更文件路径列表 |
@@ -713,8 +715,8 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 ### 条件步骤规则
 
 1. **单模块项目自动跳过步骤3**：如果 `PROJECT_TYPE` 为 `maven-single` 或 `gradle-single` 且步骤2选择了「存量审查」，步骤3（选择审查范围）必须跳过，自动设 `REVIEW_SCOPE=全量代码`
-2. **飞书插件检测**：预扫描阶段检测飞书插件安装状态（openclaw-lark / feishu / openclaw-wkzj 三者启用其一即通过），根据结果决定是否执行步骤5（飞书上传选项）；均未安装时自动设 `FEISHU_UPLOAD_OPTION=插件未安装`
-3. **飞书上传执行**：子agent根据 `FEISHU_UPLOAD_OPTION` 参数执行对应上传动作（云文档、多维表格或两者）
+2. **lark-cli 检测**：预扫描阶段检测 lark-cli 是否安装，根据结果决定是否执行步骤5（飞书上传选项）；未安装时自动设 `FEISHU_UPLOAD_OPTION=lark-cli未安装`
+3. **飞书上传执行**：子agent根据 `FEISHU_UPLOAD_OPTION` 参数执行对应上传动作。上传飞书云文档必须使用 `lark-doc` skill，上传多维表格必须使用 `lark-base` skill，均通过 `lark-cli` 命令行工具执行
 4. **Git 分支选择**：步骤1仅在项目为 Git 仓库且存在多个活跃分支时执行；非 Git 项目或单分支项目自动跳过
 
 ---
@@ -730,7 +732,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 
 ## 示例对话
 
-### 示例1：本地Maven单模块项目（飞书插件已安装）
+### 示例1：本地Maven单模块项目（lark-cli 已安装）
 
 **注意**：以下示例展示了严格的单步交互节奏——每个回复只包含一个步骤的选项，等待用户回复后再进入下一步。
 
@@ -753,7 +755,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    - Java 文件：42 个
    - 代码行数：3,850 行
 
-   🔌 飞书插件：✅ openclaw-lark 已安装
+   🔌 lark-cli：✅ lark-cli 已安装
 
    📌 [审查类型] 请选择审查类型
 
@@ -783,7 +785,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 [第3次回复：处理步骤4 + 步骤5]
 我：✅ 已选择：standard
 
-   📌 [飞书上传] 检测到飞书插件（openclaw-lark），请选择审查结果的处理方式
+   📌 [飞书上传] 检测到 lark-cli 已安装，请选择审查结果的处理方式
 
    A) 仅显示报告 — 只在聊天中显示完整审查报告
    B) 上传到云文档 — 审查报告上传到飞书云文档，聊天中显示精简摘要
@@ -836,7 +838,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    💡 建议：...
 ```
 
-### 示例2：Git仓库（Maven多模块，多分支，飞书插件未安装）
+### 示例2：Git仓库（Maven多模块，多分支，lark-cli 未安装）
 
 ```
 用户：帮我审查这个项目 https://github.com/spring-ai-examples/spring-boot-multi-module.git
@@ -859,7 +861,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    - 模块数量：3 个
    - 模块列表：user-service(68类), order-service(72类), common-utils(46类)
 
-   🔌 飞书插件：⚠️ 未安装
+   🔌 lark-cli：⚠️ 未安装
 
    📌 [选择分支] 检测到 Git 仓库（当前分支：main），请选择要审查的分支
 
@@ -914,7 +916,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 [第5次回复：步骤5（跳过）+ 步骤6确认]
 我：✅ 已选择：deep
 
-   未检测到飞书插件，跳过飞书上传选项。
+   未检测到 lark-cli，跳过飞书上传选项。
 
    📋 执行计划：
    - 项目路径：{技能目录}/code/spring-boot-multi-module
@@ -924,7 +926,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    - 审查范围：user-service,order-service
    - 审查模式：deep
    - 启用维度：全量 15 维度
-   - 飞书上传：插件未安装
+   - 飞书上传：lark-cli未安装
 
    A) ✅ 确认执行 — 按以上配置开始审查
    B) ❌ 取消 — 取消本次审查
@@ -971,7 +973,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    - Java 文件：42 个
    - 代码行数：3,200 行
 
-   🔌 飞书插件：⚠️ 未安装
+   🔌 lark-cli：⚠️ 未安装
 
    ✅ 参数校验通过：
    - --mode fast → REVIEW_MODE=fast
@@ -1050,7 +1052,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    - 模块数量：3 个
    - 模块列表：user-service(68类), order-service(72类), common-utils(46类)
 
-   🔌 飞书插件：✅ openclaw-wkzj 已安装
+   🔌 lark-cli：✅ lark-cli 已安装
 
    ✅ 已切换到分支: develop
 
