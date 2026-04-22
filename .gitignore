@@ -7,9 +7,6 @@
 .vscode/
 *.iml
 
-# Git仓库缓存目录
-code/
-
 # 测试输出
 test-output/
 *.test

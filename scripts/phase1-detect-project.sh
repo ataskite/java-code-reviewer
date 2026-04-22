@@ -5,10 +5,10 @@
 
 INPUT_PATH="${1:?请输入项目路径或Git URL}"
 
-# 本地缓存目录：脚本所在目录的上级 code/ 子目录
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BASE_DIR="$(dirname "$SCRIPT_DIR")"
-CODE_DIR="$BASE_DIR/code"
+# 本地缓存目录：统一使用 /tmp 目录，避免污染技能目录
+CODE_DIR="/tmp"
+
+# 说明：使用标准 git clone（非浅克隆），确保获取所有远程分支引用
 
 # 识别规则：以http://、https://、git://或git@开头的URL → Git仓库
 if [[ "$INPUT_PATH" =~ ^https?:// ]] || [[ "$INPUT_PATH" =~ ^git:// ]] || [[ "$INPUT_PATH" =~ ^git@ ]]; then

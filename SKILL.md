@@ -644,7 +644,7 @@ B) ❌ 取消 — 取消本次审查
 
 | 变量名 | 来源 | 示例值 |
 |--------|------|--------|
-| `PROJECT_DIR` | 预扫描项目识别输出 | `{技能目录}/code/{仓库名}` 或本地路径 |
+| `PROJECT_DIR` | 预扫描项目识别输出 | `/tmp/{仓库名}` 或本地路径 |
 | `PROJECT_NAME` | `basename "$PROJECT_DIR"` 自动提取 | `spring-ai-agent-utils` |
 | `PROJECT_TYPE` | 预扫描项目扫描输出 | `maven-single` / `maven-multi` / `gradle-single` / `gradle-multi` / `unknown` |
 | `REVIEW_TYPE` | 交互步骤2用户选择 / 快速启动 `--type` | `增量审查` / `存量审查` |
@@ -871,7 +871,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 
    📂 项目：spring-boot-multi-module
    - 来源：Git仓库（已克隆）
-   - 路径：{技能目录}/code/spring-boot-multi-module
+   - 路径：/tmp/spring-boot-multi-module
    - 类型：Maven 多模块
 
    🌿 Git：
@@ -942,7 +942,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
    未检测到 lark-cli，跳过飞书上传选项。
 
    📋 执行计划：
-   - 项目路径：{技能目录}/code/spring-boot-multi-module
+   - 项目路径：/tmp/spring-boot-multi-module
    - 项目类型：maven-multi
    - 审查分支：develop
    - 审查类型：存量审查
@@ -1062,7 +1062,7 @@ bash scripts/phase6-prepare-incremental.sh "$PROJECT_DIR" {N}
 
    📂 项目：repo
    - 来源：Git仓库（已克隆）
-   - 路径：{技能目录}/code/spring-boot-multi-module
+   - 路径：/tmp/spring-boot-multi-module
    - 类型：Maven 多模块
 
    🌿 Git：
