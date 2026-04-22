@@ -26,7 +26,7 @@ echo "# === 变更文件列表 ==="
 if [ "$COMMIT_COUNT" -eq 0 ]; then
   echo "（无提交记录）"
 elif [ "$TOTAL_COMMITS" -eq 1 ]; then
-  git -C "$PROJECT_DIR" show --stat --format="" HEAD --name-only
+  git -C "$PROJECT_DIR" show --format="" --name-only HEAD
 else
   git -C "$PROJECT_DIR" diff --name-only HEAD~"$COMMIT_COUNT"..HEAD
 fi

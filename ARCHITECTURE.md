@@ -11,7 +11,7 @@ java-code-reviewer/
 │   │   ├── 模式判定（交互式 / 快速启动）
 │   │   ├── 预扫描阶段（4脚本顺序执行）
 │   │   ├── 交互式确认（严格单步 + 工具禁用）
-│   │   └── 阶段六：子Agent调用
+│   │   └── 代码审查阶段：子Agent调用
 │   ├── 重要规则（10条强制规则）
 │   ├── 错误处理
 │   └── 示例对话（5个场景）
@@ -54,7 +54,7 @@ java-code-reviewer/
 │   ├── phase4-detect-lark-plugin.sh # lark-cli 检测
 │   │   └── 输入：无 → 输出：LARK_PLUGIN_INSTALLED
 │   │
-│   └── phase6-prepare-incremental.sh # 增量审查预处理
+│   └── phase5-prepare-incremental.sh # 增量审查预处理
 │       └── 输入：PROJECT_DIR + N → 输出：GIT_LOG + FILES + STATS
 │
 └── references/                   # 📚 参考文档目录
@@ -117,7 +117,7 @@ java-code-reviewer/
 │              └────────┬────────┘                               │
 │                       ↓                                        │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │  阶段六：调用子Agent执行审查                            │  │
+│  │  代码审查阶段：调用子Agent执行审查                            │  │
 │  │  → 输出启动提示（含预估耗时）                           │  │
 │  │  → 增量审查预处理（条件执行脚本）                       │  │
 │  │  → 构造prompt（参数 + 提示词 + 引用）                   │  │
@@ -228,7 +228,7 @@ java-code-reviewer/
                          │
                          ↓
 ┌──────────────────────────────────────────────────────┐
-│           阶段六：构造子Agent Prompt                  │
+│           代码审查阶段：构造子Agent Prompt                  │
 │  ┌────────────────────────────────────────────┐     │
 │  │  1. 审查任务参数表（变量注入）             │     │
 │  │  2. 附加 prompts/java-code-reviewer.md    │     │
@@ -237,7 +237,7 @@ java-code-reviewer/
 │  └────────────────────────────────────────────┘     │
 │                                                       │
 │  增量审查时额外执行：                                 │
-│  → phase6-prepare-incremental.sh                     │
+│  → phase5-prepare-incremental.sh                     │
 │  → 输出：GIT_LOG + CHANGED_FILES + DIFF_STATS        │
 └──────────────────────────┬───────────────────────────┘
                            │
@@ -342,7 +342,7 @@ java-code-reviewer/
 | phase2-switch-branch.sh | 二C | PROJECT_DIR + 分支 | 切换结果 |
 | phase3-project-scan.sh | 三 | PROJECT_DIR | PROJECT_TYPE + MODULES |
 | phase4-detect-lark-plugin.sh | 四 | 无 | LARK_PLUGIN_INSTALLED (检测 lark-cli) |
-| phase6-prepare-incremental.sh | 六 | PROJECT_DIR + N | GIT_LOG + FILES + STATS |
+| phase5-prepare-incremental.sh | 五 | PROJECT_DIR + N | GIT_LOG + FILES + STATS |
 
 **关键特点**：
 - 独立可测试：每个脚本可单独运行验证
@@ -501,7 +501,7 @@ SKILL.md
   ├── 模式判定 → 交互式 / 快速启动
   ├── 预扫描阶段 → scripts/phase1~4.sh (4个脚本)
   ├── 交互式确认 → 纯文本选项（禁用结构化工具）
-  └── 阶段六 → prompts/java-code-reviewer.md
+  └── 代码审查阶段 → prompts/java-code-reviewer.md
 
 prompts/java-code-reviewer.md
   ├── 引用 → references/review-framework.md
@@ -538,7 +538,7 @@ references/review-framework.md
 1. **用户触发** → 主Agent接收请求
 2. **预扫描** → 4脚本顺序执行采集项目数据 → 输出预扫描摘要
 3. **交互式确认** → 6步纯文本选项交互（严格单步）
-4. **阶段六** → 构造prompt并调用子Agent
+4. **代码审查阶段** → 构造prompt并调用子Agent
 5. **子Agent执行** → 读取审查框架 + 扫描代码 + 生成报告
 6. **飞书上传** → 条件执行（根据用户选择）
 7. **结果展示** → 主Agent展示结果给用户
@@ -548,7 +548,7 @@ references/review-framework.md
 1. **用户触发**（含 `--mode` 参数） → 主Agent接收请求
 2. **预扫描** → 4脚本顺序执行采集项目数据
 3. **参数校验** → 校验必填参数，失败则终止（不降级为交互式）
-4. **阶段六** → 直接构造prompt并调用子Agent（跳过交互确认）
+4. **代码审查阶段** → 直接构造prompt并调用子Agent（跳过交互确认）
 5. **子Agent执行** → 同上
 6. **结果展示** → 主Agent展示结果给用户
 

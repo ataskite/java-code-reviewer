@@ -45,7 +45,7 @@ git clone <repo-url> ~/.openclaw/workspace-coding/skills/java-code-reviewer
 │   ├── phase2-switch-branch.sh
 │   ├── phase3-project-scan.sh
 │   ├── phase4-detect-lark-plugin.sh
-│   └── phase6-prepare-incremental.sh
+│   └── phase5-prepare-incremental.sh
 └── references/
     └── review-framework.md       # 15维度审查框架手册
 ```
@@ -217,7 +217,7 @@ bash scripts/phase4-detect-lark-plugin.sh
 执行计划确认                        直接执行
   └──────────┬─────────────────────┘
              ↓
-      阶段六：子 Agent 执行审查
+      代码审查阶段：子 Agent 执行审查
              ↓
       飞书上传（可选）
              ↓
