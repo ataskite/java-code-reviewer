@@ -4,7 +4,7 @@
 
 ```
 java-code-reviewer/
-├── SKILL.md                      # ⭐ 主技能定义文档（1086行）
+├── SKILL.md                      # ⭐ 主技能定义文档
 │   ├── 用途与触发场景
 │   ├── 快速启动模式（参数规范 + 校验规则）
 │   ├── 完整工作流程
@@ -14,7 +14,7 @@ java-code-reviewer/
 │   │   └── 代码审查阶段：子Agent调用
 │   ├── 重要规则（10条强制规则）
 │   ├── 错误处理
-│   └── 示例对话（5个场景）
+│   └── 示例对话（引用 references/examples.md）
 │
 ├── README.md                     # 项目说明文档
 │   ├── 安装与验证
@@ -26,16 +26,16 @@ java-code-reviewer/
 ├── .gitignore                    # Git 忽略规则
 │
 ├── prompts/                      # 🤖 子Agent提示词目录
-│   └── java-code-reviewer.md     # 子Agent完整提示词（811行）
+│   └── java-code-reviewer.md     # 子Agent提示词（引用式架构）
 │       ├── 审查原则
-│       ├── 审查模式定义（模式×维度矩阵）
+│       ├── 审查模式定义（引用 review-framework.md）
 │       ├── 外部参数注入规范
 │       ├── Agent执行流程（6步）
 │       ├── 审查框架引用 ⭐
 │       ├── 核心审查目标
 │       ├── 问题等级定义
 │       ├── 评分标尺
-│       ├── 输出格式规范
+│       ├── 输出格式引用 ⭐（引用 report-format.md）
 │       └── 审查指南（强制规则）
 │
 ├── scripts/                      # 🔧 可执行脚本目录（6个脚本）
@@ -57,12 +57,14 @@ java-code-reviewer/
 │   └── phase5-prepare-incremental.sh # 增量审查预处理
 │       └── 输入：PROJECT_DIR + N → 输出：GIT_LOG + FILES + STATS
 │
-└── references/                   # 📚 参考文档目录
-    └── review-framework.md       # 15维度审查框架手册（304行）
-        ├── 15个审查维度详细定义
-        ├── 模式×维度覆盖矩阵
-        ├── 各模式的启用范围说明
-        └── 版本信息
+└── references/                   # 📚 参考文档目录（4个文件）
+    ├── review-framework.md       # 15维度审查框架手册
+    │   ├── 15个审查维度详细定义
+    │   ├── 模式×维度覆盖矩阵
+    │   └── 各模式的启用范围说明
+    ├── report-format.md          # 审查报告输出格式规范
+    ├── bitable-schema.md         # 飞书多维表格字段定义
+    └── examples.md               # 示例对话（5个场景）
 ```
 
 ---
@@ -142,7 +144,7 @@ java-code-reviewer/
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Step 3: 生成审查报告                                   │  │
-│  │  → 按输出格式规范生成报告                               │  │
+│  │  → 按输出格式规范生成报告（引用 report-format.md）      │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Step 4: 上传飞书云文档（条件）                         │  │
@@ -297,7 +299,7 @@ java-code-reviewer/
 - 子Agent调用规范
 - 10条强制规则
 - 错误处理规则
-- 示例对话（5个场景）
+- 示例对话（引用 references/examples.md）
 
 **关键特点**：
 - 脚本引用化：所有执行步骤通过 `bash scripts/*.sh` 调用
@@ -317,7 +319,7 @@ java-code-reviewer/
 - 审查模式定义（模式×维度矩阵）
 - Agent执行流程（6步）
 - 审查框架引用（指向 references/review-framework.md）
-- 输出格式规范
+- 输出格式规范（引用 references/report-format.md）
 - 审查指南（MUST/DO/DON'T）
 - 多维表格字段定义（18个字段，含3个预留修复字段）
 
@@ -446,10 +448,11 @@ java-code-reviewer/
 ### 5. 引用式架构
 
 **优势**：
-- 审查框架独立维护
-- Agent提示词精简（811行）
+- 审查框架独立维护（review-framework.md）
+- 报告格式独立维护（report-format.md）
+- Agent提示词精简（核心逻辑 ~550 行，格式和框架按需加载）
 - 版本同步机制清晰
-- 修改框架不影响提示词结构
+- 修改格式/框架不影响提示词结构
 
 ### 6. 变量标准化
 
@@ -491,6 +494,7 @@ FEISHU_UPLOAD_OPTION  # 飞书上传选项
 | 5.2 | 新增快速启动模式 | 支持定时任务/CI/CD自动化场景 |
 | 5.2 | 强化交互式确认规则 | 工具禁用 + 严格单步执行 + 反例 |
 | 5.3 | 飞书上传迁移至 lark-cli | 移除旧版 feishu_ 工具依赖，统一使用 lark-cli + lark-doc/lark-base skills |
+| 5.4 | 全面结构优化 | 输出格式外置 + 示例外置 + 矩阵去重 + 工具名修正 + 脚本重编号，核心文件减重30% |
 
 ---
 
@@ -501,20 +505,25 @@ SKILL.md
   ├── 模式判定 → 交互式 / 快速启动
   ├── 预扫描阶段 → scripts/phase1~4.sh (4个脚本)
   ├── 交互式确认 → 纯文本选项（禁用结构化工具）
-  └── 代码审查阶段 → prompts/java-code-reviewer.md
+  ├── 代码审查阶段 → prompts/java-code-reviewer.md
+  └── 示例对话 → references/examples.md
 
 prompts/java-code-reviewer.md
-  ├── 引用 → references/review-framework.md
+  ├── 引用 → references/review-framework.md（审查框架 + 维度矩阵）
+  ├── 引用 → references/report-format.md（报告输出格式）
+  ├── 引用 → references/bitable-schema.md（多维表格字段定义）
   ├── 注入 → 外部参数（由主Agent提供）
   ├── 飞书云文档上传 → lark-cli + lark-doc skill
-  ├── 多维表格操作 → lark-cli + lark-base skill
-  └── 定义 → 多维表格18字段（含3个预留修复字段）
+  └── 多维表格操作 → lark-cli + lark-base skill
 
 scripts/*.sh
   └── 独立执行 → 系统命令 (git, find, date等; lark-cli 仅检测安装状态)
 
-references/review-framework.md
-  └── 独立维护 → 审查标准定义
+references/
+  ├── review-framework.md   → 审查标准定义 + 模式×维度矩阵
+  ├── report-format.md      → 报告输出格式规范
+  ├── bitable-schema.md     → 多维表格18字段定义
+  └── examples.md           → 示例对话（5个场景）
 ```
 
 ### 多维表格字段结构（18个字段）
