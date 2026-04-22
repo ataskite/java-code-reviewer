@@ -13,10 +13,10 @@ if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo ""
 
   # 主动获取远程分支信息（仅更新引用，不下载内容）
-  # 使用 --no-tags 避免下载标签，--depth=0 限制历史深度
-  # 设置超时时间为5秒，避免长时间等待
+  # 使用 --no-tags 避免下载标签
+  # 设置超时时间为10秒，避免长时间等待
   # 使用 perl alarm 兼容 macOS（macOS 默认无 timeout 命令）
-  perl -e 'alarm 5; exec @ARGV' git -C "$PROJECT_DIR" fetch --no-tags --quiet --depth=0 2>/dev/null || true
+  perl -e 'alarm 10; exec @ARGV' git -C "$PROJECT_DIR" fetch --no-tags --quiet 2>/dev/null || true
 
   # 列出本地分支，按最近提交时间排序（最多10个）
   echo "=== 本地分支 ==="
