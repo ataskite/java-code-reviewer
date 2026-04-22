@@ -22,7 +22,7 @@ if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "=== 本地分支 ==="
   LOCAL_TOTAL=$(git -C "$PROJECT_DIR" for-each-ref refs/heads/ --format='%(refname:short)' 2>/dev/null | wc -l | tr -d ' ')
   git -C "$PROJECT_DIR" for-each-ref --sort=-committerdate \
-    --format='BRANCH: %(refname:short) | %(committerdate:short) | %(subject)' refs/heads/ | head -10
+    --format='BRANCH: %(refname:short) | %(committerdate:format:%Y-%m-%d %H:%M:%S) | %(subject)' refs/heads/ | head -10
   if [ "$LOCAL_TOTAL" -gt 10 ]; then
     echo "（共 $LOCAL_TOTAL 个本地分支，仅展示最近 10 个）"
   fi
@@ -34,7 +34,7 @@ if git -C "$PROJECT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$PROJECT_DIR" for-each-ref --sort=-committerdate \
     --format='%(refname:short)' refs/remotes/ | grep -v '/HEAD$' | while read -r ref; do
     short_name=$(echo "$ref" | sed 's|^origin/||')
-    date=$(git -C "$PROJECT_DIR" log -1 --format='%cs' "$ref" 2>/dev/null)
+    date=$(git -C "$PROJECT_DIR" log -1 --format='%ci' "$ref" 2>/dev/null)
     subject=$(git -C "$PROJECT_DIR" log -1 --format='%s' "$ref" 2>/dev/null | cut -c1-30)
     echo "BRANCH_REMOTE: $ref | $date | $subject"
   done | head -10
