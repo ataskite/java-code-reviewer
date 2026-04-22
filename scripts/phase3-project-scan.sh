@@ -11,8 +11,9 @@ if [ -f "$PROJECT_DIR/pom.xml" ]; then
   # Maven项目扫描
   echo "=== 项目概况 ==="
   echo "项目类型: Maven"
-  echo "Java文件总数: $(find "$PROJECT_DIR" -name '*.java' -not -path '*/target/*' -not -path '*/.git/*' | wc -l | tr -d ' ')"
-  echo "代码总行数: $(find "$PROJECT_DIR" -name '*.java' -not -path '*/target/*' -not -path '*/.git/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')"
+  JAVA_FILES=$(find "$PROJECT_DIR" -name '*.java' -not -path '*/target/*' -not -path '*/.git/*')
+  echo "Java文件总数: $(echo "$JAVA_FILES" | grep -c . || echo 0)"
+  echo "代码总行数: $(echo "$JAVA_FILES" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)"
   echo ""
 
   # 检测是否为多模块项目（关键判断，后续阶段直接使用PROJECT_TYPE变量）
@@ -32,11 +33,15 @@ if [ -f "$PROJECT_DIR/pom.xml" ]; then
     rel=$(echo "$dir" | sed "s|$PROJECT_DIR||")
     # 单模块项目：跳过根目录自身（rel 为空），避免输出空 MODULE 行
     if [ -z "$rel" ]; then
-      echo "├── (root)  [$(find "$dir" -name '*.java' -not -path '*/target/*' 2>/dev/null | wc -l | tr -d ' ') 类, $(find "$dir" -name '*.java' -not -path '*/target/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ') 行]"
+      root_java=$(find "$dir" -name '*.java' -not -path '*/target/*' 2>/dev/null)
+      root_count=$(echo "$root_java" | grep -c . || echo 0)
+      root_lines=$(echo "$root_java" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)
+      echo "├── (root)  [${root_count} 类, ${root_lines} 行]"
       continue
     fi
-    java_count=$(find "$dir" -name '*.java' -not -path '*/target/*' 2>/dev/null | wc -l | tr -d ' ')
-    lines=$(find "$dir" -name '*.java' -not -path '*/target/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
+    module_java=$(find "$dir" -name '*.java' -not -path '*/target/*' 2>/dev/null)
+    java_count=$(echo "$module_java" | grep -c . || echo 0)
+    lines=$(echo "$module_java" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)
     if [ "$java_count" -gt 0 ]; then
       depth=$(echo "$rel" | tr -cd '/' | wc -c | tr -d ' ')
       indent=$(printf '%*s' $((depth * 2)) '')
@@ -49,8 +54,9 @@ elif [ -f "$PROJECT_DIR/build.gradle" ] || [ -f "$PROJECT_DIR/build.gradle.kts" 
   # Gradle项目扫描
   echo "=== 项目概况 ==="
   echo "项目类型: Gradle"
-  echo "Java文件总数: $(find "$PROJECT_DIR" -name '*.java' -not -path '*/build/*' -not -path '*/.git/*' | wc -l | tr -d ' ')"
-  echo "代码总行数: $(find "$PROJECT_DIR" -name '*.java' -not -path '*/build/*' -not -path '*/.git/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')"
+  JAVA_FILES=$(find "$PROJECT_DIR" -name '*.java' -not -path '*/build/*' -not -path '*/.git/*')
+  echo "Java文件总数: $(echo "$JAVA_FILES" | grep -c . || echo 0)"
+  echo "代码总行数: $(echo "$JAVA_FILES" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)"
   echo ""
 
   # 检测是否为多模块项目（通过settings.gradle判断）
@@ -75,11 +81,15 @@ elif [ -f "$PROJECT_DIR/build.gradle" ] || [ -f "$PROJECT_DIR/build.gradle.kts" 
   for dir in $(find "$PROJECT_DIR" -maxdepth 3 -name 'build.gradle*' -not -path '*/build/*' | sed 's|/build.gradle.*||' | sort); do
     rel=$(echo "$dir" | sed "s|$PROJECT_DIR||")
     if [ -z "$rel" ]; then
-      echo "├── (root)  [$(find "$dir" -name '*.java' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ') 类, $(find "$dir" -name '*.java' -not -path '*/build/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ') 行]"
+      root_java=$(find "$dir" -name '*.java' -not -path '*/build/*' 2>/dev/null)
+      root_count=$(echo "$root_java" | grep -c . || echo 0)
+      root_lines=$(echo "$root_java" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)
+      echo "├── (root)  [${root_count} 类, ${root_lines} 行]"
       continue
     fi
-    java_count=$(find "$dir" -name '*.java' -not -path '*/build/*' 2>/dev/null | wc -l | tr -d ' ')
-    lines=$(find "$dir" -name '*.java' -not -path '*/build/*' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
+    module_java=$(find "$dir" -name '*.java' -not -path '*/build/*' 2>/dev/null)
+    java_count=$(echo "$module_java" | grep -c . || echo 0)
+    lines=$(echo "$module_java" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}' || echo 0)
     if [ "$java_count" -gt 0 ]; then
       depth=$(echo "$rel" | tr -cd '/' | wc -c | tr -d ' ')
       indent=$(printf '%*s' $((depth * 2)) '')

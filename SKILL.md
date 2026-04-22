@@ -580,7 +580,26 @@ B) ❌ 取消 — 取消本次审查
 
 #### 子agent调用方式
 
-使用 Agent 工具，按以下方式构造 prompt：
+使用openclaw的`sessions_spawn`工具委派子agent，按以下方式构造调用：
+
+**`sessions_spawn`工具调用参数（参考格式）**：
+
+```json
+{
+  "task": "执行 Java 代码审查任务（审查参数已注入）",
+  "runtime": "subagent",
+  "mode": "run"
+}
+```
+
+> 注意：openclaw飞书channel不支持子代理的 thread 绑定，无需设置
+
+**参数说明**：
+- `task`: 子代理的任务描述
+- `runtime`: 固定为 `"subagent"`
+- `mode`: 固定为 `"run"`
+
+**Prompt 构造方式**（在调用 Agent 工具时传入的 prompt 参数）：
 
 **1. 注入审查参数**（替换 `{变量名}` 为实际值）：
 

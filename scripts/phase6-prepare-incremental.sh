@@ -15,7 +15,11 @@ if [ "$TOTAL_COMMITS" -lt "$COMMIT_COUNT" ]; then
 fi
 
 echo "# === 提交记录 ==="
-git -C "$PROJECT_DIR" log --oneline -"$COMMIT_COUNT"
+if [ "$COMMIT_COUNT" -eq 0 ]; then
+  echo "（无提交记录）"
+else
+  git -C "$PROJECT_DIR" log --oneline -"$COMMIT_COUNT"
+fi
 
 echo ""
 echo "# === 变更文件列表 ==="
