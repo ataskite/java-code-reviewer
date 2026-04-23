@@ -11,7 +11,7 @@
 - **飞书集成**：审查报告上传云文档、问题清单录入多维表格（可选，依赖 lark-cli）
 - **纯 Bash 实现**：无 Python 依赖，兼容 macOS/Linux 标准环境
 
-## 安装
+## 快速安装
 
 ### 前置条件
 
@@ -19,66 +19,133 @@
 - Bash 3.0+ 环境（macOS / Linux）
 - 系统已安装 `git` 命令
 
-### 安装步骤
+### 第一步：安装 Skill
 
-将本技能目录放入 OpenClaw 的 skills 目录下即可：
+将本技能目录放入 coding agent 的 skills 目录下：
 
 ```bash
-# 方式一：直接复制到 skills 目录
-cp -r java-code-reviewer/ ~/.openclaw/workspace-coding/skills/
-
-# 方式二：如果是 Git 仓库，克隆到 skills 目录
+# 方式一：Git 克隆（推荐）
 git clone <repo-url> ~/.openclaw/workspace-coding/skills/java-code-reviewer
+
+# 方式二：直接复制
+cp -r java-code-reviewer/ ~/.openclaw/workspace-coding/skills/
 ```
 
-确保目录结构如下（`SKILL.md` 必须位于技能根目录）：
+### 第二步：一键配置子 Agent
 
-```
-~/.openclaw/workspace-coding/skills/java-code-reviewer/
-├── SKILL.md                      # 主技能定义（OpenClaw 自动加载此文件）
-├── README.md                     # 本文件
-├── prompts/
-│   └── java-code-reviewer.md     # 子 Agent 审查提示词
-├── scripts/                      # 各阶段执行脚本
-│   ├── phase1-detect-project.sh
-│   ├── phase2-detect-branches.sh
-│   ├── phase2-switch-branch.sh
-│   ├── phase3-project-scan.sh
-│   ├── phase4-detect-lark-plugin.sh
-│   └── phase5-prepare-incremental.sh
-└── references/
-    └── review-framework.md       # 15维度审查框架手册
+运行内置的 setup 脚本，自动完成所有配置：
+
+```bash
+bash ~/.openclaw/workspace-coding/skills/java-code-reviewer/scripts/setup-subagent.sh
 ```
 
-### 验证安装
+该脚本会自动完成以下操作：
 
-重启 OpenClaw 或等待技能自动热加载后，在对话中发送：
+| 步骤 | 操作 | 说明 |
+|------|------|------|
+| 1 | 创建 workspace 目录 | `~/.openclaw/workspace-java-code-reviewer/` |
+| 2 | 生成 AGENTS.md | 从模板 `prompts/java-code-reviewer.md` 复制并替换 `{baseDir}` 为实际路径 |
+| 3 | 复制 references/ | 审查框架、报告格式、多维表格字段定义等 |
+| 4 | 注册子 Agent | `openclaw agents add java-code-reviewer` |
+| 5 | 设置身份 | 名称"Java代码审查"，emoji 🛡️ |
+| 6 | 配置委派权限 | 在 `openclaw.json` 中添加 `allowAgents: ["java-code-reviewer"]` |
+
+自定义 workspace 路径：
+
+```bash
+bash scripts/setup-subagent.sh /custom/path/to/workspace
+```
+
+### 第三步：验证
+
+重启 OpenClaw 后，在 coding agent 对话中发送：
 
 ```
 帮我审查这个项目 /path/to/your/java/project
 ```
 
-如果技能正确加载，OpenClaw 会自动识别并进入审查流程。
+如果技能正确加载，会进入审查流程。
 
 ### 可选：lark-cli 安装
 
 如需使用飞书上传功能（云文档/多维表格），需安装 `lark-cli`：
 
 ```bash
-# 安装 CLI
 npm install -g @larksuite/cli
-
-# 安装 CLI Skills（必需，包含 lark-doc、lark-base 等）
 npx skills add larksuite/cli -y -g
-
-# 配置应用凭证（仅需一次）
 lark-cli config init
-
-# 登录授权
 lark-cli auth login --recommend
 ```
 
 未安装 lark-cli 不影响审查功能，仅无法上传飞书。详细安装指南见 [lark-cli README](https://github.com/larksuite/cli/blob/main/README.zh.md)。
+
+---
+
+## 给 OpenClaw 的配置指南
+
+> **使用方式**：将本 README 发给 OpenClaw（或说"按 README 配置 java-code-reviewer"），OpenClaw 按以下步骤执行即可完成全部配置。
+
+本技能由两部分组成，需要分别部署：
+
+**Part 1 — Skill（主 Agent 加载）**：`SKILL.md` 定义审查工作流，放在 coding agent 的 skills 目录下。
+
+**Part 2 — 子 Agent（独立 workspace）**：`AGENTS.md` + `references/` 放在独立 workspace 下，通过 `openclaw agents add` 注册，主 Agent 通过 `sessions_spawn` 的 `agentId` 参数委派任务。
+
+### 配置步骤
+
+**步骤 1**：确认 skill 已安装在 coding agent 的 skills 目录下：
+```
+~/.openclaw/workspace-coding/skills/java-code-reviewer/
+```
+
+如果尚未安装，从 Git 克隆或复制到该目录。
+
+**步骤 2**：运行 setup 脚本一键配置子 Agent：
+```bash
+bash ~/.openclaw/workspace-coding/skills/java-code-reviewer/scripts/setup-subagent.sh
+```
+
+脚本会自动：创建 workspace → 从模板生成 AGENTS.md（替换路径占位符）→ 复制 references/ → 注册 agent → 设置身份 → 配置 allowAgents。
+
+**步骤 3**：验证配置：
+```bash
+openclaw agents list
+# 应看到 java-code-reviewer agent
+```
+
+**步骤 4**：重启 OpenClaw 后即可使用。
+
+### 架构说明
+
+```
+主 Agent (coding)
+  │ 加载 SKILL.md（skills/java-code-reviewer/SKILL.md）
+  │ 预扫描 → 交互确认 → 收集审查变量
+  │
+  │ sessions_spawn({
+  │   task: "审查参数...",
+  │   agentId: "java-code-reviewer",    ← 指定子 Agent
+  │   mode: "run"
+  │ })
+  │
+  ↓
+子 Agent (java-code-reviewer)
+  │ 自动加载 AGENTS.md + references/
+  │ 执行代码审查 → 生成报告 → 上传飞书(可选)
+  │
+  ↓ 完成后自动 announce 结果回主 Agent
+主 Agent 展示结果给用户
+```
+
+### 关键文件
+
+| 文件 | 位置 | 作用 |
+|------|------|------|
+| SKILL.md | skills/java-code-reviewer/ | 主技能定义（工作流、交互规范、子 Agent 调用方式） |
+| prompts/java-code-reviewer.md | skills/java-code-reviewer/prompts/ | 子 Agent 提示词模板（`{baseDir}` 占位符） |
+| AGENTS.md | workspace-java-code-reviewer/ | 子 Agent 提示词（setup 脚本从模板生成，替换为绝对路径） |
+| references/ | 两个目录都有 | 审查框架、报告格式、多维表格字段定义 |
+| scripts/setup-subagent.sh | skills/java-code-reviewer/scripts/ | 一键配置脚本 |
 
 ---
 
@@ -166,7 +233,7 @@ lark-cli auth login --recommend
 | 3 | Spring Boot 规范 | 分层职责、依赖注入、事务、配置安全 |
 | 4 | 数据库/MyBatis | N+1、SQL注入、参数绑定、批量操作、数据一致性 |
 | 5 | 安全 | SQL注入、越权、反序列化、认证授权、依赖安全 |
-| 6 | 性能 | 并发安全、线程池、算法复杂度、限流降级 |
+| 6 | 性能 | 并发安全、线程池、算法复杂度、限流降额 |
 | 7 | 资源管理 | 连接关闭、线程泄露、OOM风险 |
 | 8 | 日志/可观测性 | 日志级别、敏感信息、健康检查 |
 | 9 | 测试质量 | 覆盖率、核心逻辑测试、Mock使用 |
@@ -200,6 +267,9 @@ bash scripts/phase3-project-scan.sh "/path/to/project"
 
 # lark-cli 检测
 bash scripts/phase4-detect-lark-plugin.sh
+
+# 子 Agent 一键配置
+bash scripts/setup-subagent.sh
 ```
 
 ## 工作流程
@@ -236,9 +306,28 @@ bash scripts/phase4-detect-lark-plugin.sh
 2. 如需新脚本，在 `scripts/` 目录创建
 
 ### 修改审查维度或提示词
-1. 审查框架：编辑 `references/review-framework.md`
-2. Agent 提示词：编辑 `prompts/java-code-reviewer.md`
-3. 确保模式×维度矩阵在两个文件中保持一致
+
+本项目采用双目录架构，修改时需同步两处：
+
+**Skill 目录**（主 Agent 加载）：
+```
+~/.openclaw/workspace-coding/skills/java-code-reviewer/
+├── SKILL.md                          # 主技能定义
+├── scripts/                          # 预扫描脚本 + setup 脚本
+├── prompts/java-code-reviewer.md     # 子 Agent 提示词模板（{baseDir} 占位符）
+└── references/                       # 审查框架、报告格式等参考文档
+```
+
+**子 Agent Workspace**（由 setup 脚本自动生成）：
+```
+~/.openclaw/workspace-java-code-reviewer/
+├── AGENTS.md                         # 子 Agent 提示词（从模板生成，绝对路径）
+└── references/                       # 从 skill 目录复制
+```
+
+**同步规则**：
+- 修改审查框架 → 编辑 `references/`，然后重新运行 `setup-subagent.sh` 或手动同步
+- 修改提示词 → 编辑 `prompts/java-code-reviewer.md`，然后重新运行 `setup-subagent.sh`
 
 ## License
 

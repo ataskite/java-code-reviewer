@@ -581,14 +581,20 @@ B) ❌ 取消 — 取消本次审查
 
 #### 子agent调用方式
 
-使用openclaw的`sessions_spawn`工具委派子agent，按以下方式构造调用：
+使用openclaw的`sessions_spawn`工具委派子agent执行审查任务。
 
-**`sessions_spawn`工具调用参数（参考格式）**：
+**子agent注册信息**（已在 `~/.openclaw/openclaw.json` 中配置）：
+- `agentId`: `java-code-reviewer`
+- `workspace`: `~/.openclaw/workspace-java-code-reviewer`
+- 子agent启动时自动加载该 workspace 下的 `AGENTS.md`（含完整审查提示词）和 `references/` 目录下的审查框架文档
+- 因此主agent**不需要**在 task 中附加 AGENTS.md 内容，只需注入审查参数
+
+**`sessions_spawn`工具调用参数**：
 
 ```json
 {
-  "task": "执行 Java 代码审查任务（审查参数已注入）",
-  "runtime": "subagent",
+  "task": "<下方构造的审查任务 prompt>",
+  "agentId": "java-code-reviewer",
   "mode": "run"
 }
 ```
@@ -596,13 +602,13 @@ B) ❌ 取消 — 取消本次审查
 > 注意：openclaw飞书channel不支持子代理的 thread 绑定，无需设置
 
 **参数说明**：
-- `task`: 子代理的任务描述
-- `runtime`: 固定为 `"subagent"`
-- `mode`: 固定为 `"run"`
+- `task`（必填）：审查任务的完整 prompt，包含所有注入的审查参数和项目数据（见下方构造方式）
+- `agentId`（必填）：固定为 `"java-code-reviewer"`，指定使用已注册的代码审查子agent
+- `mode`：固定为 `"run"`（一次性执行模式）
 
-**Prompt 构造方式**（在调用 Agent 工具时传入的 prompt 参数）：
+**task 参数构造方式**：
 
-**1. 注入审查参数**（替换 `{变量名}` 为实际值）：
+将以下内容组装为一段完整文本，作为 `sessions_spawn` 的 `task` 参数值（替换 `{变量名}` 为实际值）：
 
 ```
 ## 审查任务参数（外部注入，请直接使用，无需再次确认）
@@ -632,12 +638,7 @@ B) ❌ 取消 — 取消本次审查
 
 ### 变更统计概览（仅增量审查时提供）
 {DIFF_STATS_OUTPUT}
-```
 
-**2. 附加 agent 提示词内容**：读取 `{baseDir}/prompts/java-code-reviewer.md` 的完整内容并追加到 prompt 中。**注意**：提示词中包含 `{baseDir}` 占位符（用于引用 `references/review-framework.md`），读取后需将所有 `{baseDir}` 替换为本技能的实际根目录绝对路径（即 SKILL.md 所在目录），确保子agent能正确找到审查框架文件。
-
-**3. 附加执行指令**：
-```
 请基于以上审查参数，立即开始执行代码审查。不要进行任何用户交互或询问，直接从代码审查开始执行。
 ```
 
