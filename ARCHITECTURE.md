@@ -57,13 +57,12 @@ java-code-reviewer/
 │   └── phase5-prepare-incremental.sh # 增量审查预处理
 │       └── 输入：PROJECT_DIR + N → 输出：GIT_LOG + FILES + STATS
 │
-└── references/                   # 📚 参考文档目录（4个文件）
+└── references/                   # 📚 参考文档目录（3个文件）
     ├── review-framework.md       # 15维度审查框架手册
     │   ├── 15个审查维度详细定义
     │   ├── 模式×维度覆盖矩阵
     │   └── 各模式的启用范围说明
     ├── report-format.md          # 审查报告输出格式规范
-    ├── bitable-schema.md         # 飞书多维表格字段定义
     └── examples.md               # 示例对话（5个场景）
 ```
 
@@ -511,7 +510,7 @@ SKILL.md
 prompts/java-code-reviewer.md
   ├── 引用 → references/review-framework.md（审查框架 + 维度矩阵）
   ├── 引用 → references/report-format.md（报告输出格式）
-  ├── 引用 → references/bitable-schema.md（多维表格字段定义）
+  ├── 内联 → 多维表格字段定义（原 bitable-schema.md，已内联到 prompt）
   ├── 注入 → 外部参数（由主Agent提供）
   ├── 飞书云文档上传 → lark-cli + lark-doc skill
   └── 多维表格操作 → lark-cli + lark-base skill
@@ -522,7 +521,6 @@ scripts/*.sh
 references/
   ├── review-framework.md   → 审查标准定义 + 模式×维度矩阵
   ├── report-format.md      → 报告输出格式规范
-  ├── bitable-schema.md     → 多维表格18字段定义
   └── examples.md           → 示例对话（5个场景）
 ```
 
