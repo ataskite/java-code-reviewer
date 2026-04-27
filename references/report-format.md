@@ -181,5 +181,5 @@
 - 3 个关键行动项
 
 **审查人**: OpenClaw Java 代码审查 Agent (`java-code-reviewer`)
-**报告版本**: 5.3
+**报告版本**: 5.4
 **审查模式**: [fast / standard / deep / security]

@@ -1,5 +1,7 @@
 # Java Code Reviewer Skill
 
+> **⚠️ 平台说明**：本技能为 **OpenClaw 专用版本**，依赖 OpenClaw 的 `sessions_spawn` 子代理机制和 OpenClaw Skill 规范。不支持 Claude Code 或其他 Agent 运行时。
+
 企业级 Java 代码审查专用技能，支持 15 个维度全面审查，4 种审查模式，增量/存量两种审查类型，支持交互式和快速启动两种使用方式。
 
 ## 特性
@@ -19,62 +21,36 @@
 - Bash 3.0+ 环境（macOS / Linux）
 - 系统已安装 `git` 命令
 
-### 安装步骤
+### 快速安装
 
-将本技能目录放入 OpenClaw 的 skills 目录下即可：
+将本仓库克隆到 OpenClaw 的 skills 目录下即可：
 
 ```bash
-# 方式一：直接复制到 skills 目录
-cp -r java-code-reviewer/ ~/.openclaw/workspace-coding/skills/
-
-# 方式二：如果是 Git 仓库，克隆到 skills 目录
-git clone <repo-url> ~/.openclaw/workspace-coding/skills/java-code-reviewer
+git clone <本仓库地址> ~/.openclaw/workspace-coding/skills/java-code-reviewer
 ```
 
-确保目录结构如下（`SKILL.md` 必须位于技能根目录）：
+> 如果目标目录已存在，先删除再克隆：`rm -rf ~/.openclaw/workspace-coding/skills/java-code-reviewer`
 
-```
-~/.openclaw/workspace-coding/skills/java-code-reviewer/
-├── SKILL.md                      # 主技能定义（OpenClaw 自动加载此文件）
-├── README.md                     # 本文件
-├── prompts/
-│   └── java-code-reviewer.md     # 子 Agent 审查提示词
-├── scripts/                      # 各阶段执行脚本
-│   ├── phase1-detect-project.sh
-│   ├── phase2-detect-branches.sh
-│   ├── phase2-switch-branch.sh
-│   ├── phase3-project-scan.sh
-│   ├── phase4-detect-lark-plugin.sh
-│   └── phase5-prepare-incremental.sh
-└── references/
-    └── review-framework.md       # 15维度审查框架手册
+**验证**：确认以下文件存在即可：
+
+```bash
+ls ~/.openclaw/workspace-coding/skills/java-code-reviewer/SKILL.md
 ```
 
-### 验证安装
-
-重启 OpenClaw 或等待技能自动热加载后，在对话中发送：
+安装完成后重启 OpenClaw 或等待技能自动热加载。测试命令：
 
 ```
 帮我审查这个项目 /path/to/your/java/project
 ```
-
-如果技能正确加载，OpenClaw 会自动识别并进入审查流程。
 
 ### 可选：lark-cli 安装
 
 如需使用飞书上传功能（云文档/多维表格），需安装 `lark-cli`：
 
 ```bash
-# 安装 CLI
 npm install -g @larksuite/cli
-
-# 安装 CLI Skills（必需，包含 lark-doc、lark-base 等）
 npx skills add larksuite/cli -y -g
-
-# 配置应用凭证（仅需一次）
 lark-cli config init
-
-# 登录授权
 lark-cli auth login --recommend
 ```
 
