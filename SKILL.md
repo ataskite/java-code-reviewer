@@ -163,6 +163,7 @@ bash scripts/phase1-detect-project.sh "<用户输入的路径>"
 
 脚本输出：
 - `PROJECT_DIR=<项目绝对路径>`
+- `PROJECT_SOURCE=local|git-cache`
 
 **步骤 2：分支探测**
 
@@ -207,7 +208,7 @@ bash scripts/phase4-detect-lark-plugin.sh
 🔍 预扫描完成
 
 📂 项目：{项目名称}
-- 来源：{本地路径 / Git仓库（已克隆） / Git仓库（缓存命中，已更新）}
+- 来源：{PROJECT_SOURCE 对应展示，本地路径 / Git仓库缓存}
 - 路径：{PROJECT_DIR}
 - 类型：{PROJECT_TYPE 展示名，如 Maven 单模块 / Gradle 多模块 / 未知}
 
@@ -341,10 +342,15 @@ B) {分支名2} — {提交日期} · {提交信息前30字}
 如果选择的不是当前分支，执行切换脚本：
 
 ```bash
-bash scripts/phase2-switch-branch.sh "$PROJECT_DIR" "{TARGET_BRANCH}" "$CURRENT_BRANCH"
+bash scripts/phase2-switch-branch.sh "$PROJECT_DIR" "{TARGET_BRANCH}" "$CURRENT_BRANCH" "$PROJECT_SOURCE"
 ```
 
 脚本会自动判断分支类型（本地/远程）并执行相应切换操作。
+
+> **本地项目保护**：
+> - 当 `PROJECT_SOURCE=local` 且工作区存在未提交改动时，脚本不会切换分支
+> - 此时会提示用户并继续使用当前分支审查，避免影响本地工作区
+> - 当 `PROJECT_SOURCE=git-cache` 时，仍允许自动切换分支
 
 **切换失败时的处理**：
 1. 脚本会输出警告：`⚠️ 分支切换失败，将使用当前分支 {CURRENT_BRANCH} 继续审查`
@@ -646,6 +652,7 @@ B) ❌ 取消 — 取消本次审查
 | 变量名 | 来源 | 示例值 |
 |--------|------|--------|
 | `PROJECT_DIR` | 预扫描项目识别输出 | `/tmp/{仓库名}` 或本地路径 |
+| `PROJECT_SOURCE` | 预扫描项目识别输出 | `local` / `git-cache` |
 | `PROJECT_NAME` | `basename "$PROJECT_DIR"` 自动提取 | `spring-ai-agent-utils` |
 | `PROJECT_TYPE` | 预扫描项目扫描输出 | `maven-single` / `maven-multi` / `gradle-single` / `gradle-multi` / `unknown` |
 | `REVIEW_TYPE` | 交互步骤2用户选择 / 快速启动 `--type` | `增量审查` / `存量审查` |

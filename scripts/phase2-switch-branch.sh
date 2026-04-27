@@ -7,6 +7,7 @@ set -e
 PROJECT_DIR="${1:?请输入项目路径}"
 TARGET_BRANCH="${2:?请输入目标分支}"
 CURRENT_BRANCH="${3:?请输入当前分支}"
+PROJECT_SOURCE="${4:-unknown}"
 
 # 如果目标分支就是当前分支，无需切换
 if [ "$TARGET_BRANCH" == "$CURRENT_BRANCH" ]; then
@@ -28,6 +29,15 @@ remote_branch_exists() {
 SHORT_BRANCH=$(echo "$TARGET_BRANCH" | sed 's|^origin/||')
 
 echo "正在切换到分支: $SHORT_BRANCH"
+
+# 本地项目目录可能承载用户的在途改动，此时不主动切分支。
+if [ "$PROJECT_SOURCE" = "local" ]; then
+  DIRTY_STATUS=$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null || true)
+  if [ -n "$DIRTY_STATUS" ]; then
+    echo "⚠️ 检测到本地项目目录存在未提交改动，为避免影响当前工作区，将继续使用当前分支 $CURRENT_BRANCH 审查"
+    exit 1
+  fi
+fi
 
 # 判断分支类型并执行切换
 if local_branch_exists "$SHORT_BRANCH"; then

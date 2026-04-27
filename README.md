@@ -178,6 +178,8 @@ bash scripts/phase3-project-scan.sh "/path/to/project"
 bash scripts/phase4-detect-lark-plugin.sh
 ```
 
+其中 `phase1-detect-project.sh` 会额外输出 `PROJECT_SOURCE=local|git-cache`，供后续分支切换阶段判断是否允许自动切换。本地项目目录若存在未提交改动，会保留当前分支继续审查；Git 缓存目录仍允许自动切换分支。
+
 ## 工作流程
 
 ```

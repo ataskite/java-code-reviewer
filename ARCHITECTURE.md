@@ -42,13 +42,13 @@ java-code-reviewer/
 │
 ├── scripts/                      # 🔧 可执行脚本目录（6个脚本）
 │   ├── phase1-detect-project.sh  # 项目识别与准备
-│   │   └── 输入：路径/Git URL → 输出：PROJECT_DIR
+│   │   └── 输入：路径/Git URL → 输出：PROJECT_DIR + PROJECT_SOURCE
 │   │
 │   ├── phase2-detect-branches.sh # 分支探测
 │   │   └── 输入：PROJECT_DIR → 输出：分支列表
 │   │
 │   ├── phase2-switch-branch.sh   # 分支切换
-│   │   └── 输入：PROJECT_DIR + TARGET_BRANCH → 输出：切换结果
+│   │   └── 输入：PROJECT_DIR + TARGET_BRANCH + PROJECT_SOURCE → 输出：切换结果
 │   │
 │   ├── phase3-project-scan.sh    # 项目预扫描
 │   │   └── 输入：PROJECT_DIR → 输出：PROJECT_TYPE + MODULE列表
@@ -92,7 +92,7 @@ java-code-reviewer/
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  预扫描阶段（自动执行，不与用户交互）                    │  │
-│  │  → phase1-detect-project.sh → PROJECT_DIR                │  │
+│  │  → phase1-detect-project.sh → PROJECT_DIR + SOURCE       │  │
 │  │  → phase2-detect-branches.sh → 分支列表                  │  │
 │  │  → phase3-project-scan.sh → PROJECT_TYPE + MODULES       │  │
 │  │  → phase4-detect-lark-plugin.sh → LARK_PLUGIN_INSTALLED  │  │
@@ -186,7 +186,7 @@ java-code-reviewer/
 ┌──────────────────────────────────────────────────────┐
 │              预扫描阶段：数据采集                      │
 │  (scripts/ 目录下的4个脚本顺序执行)                    │
-│  → phase1: PROJECT_DIR                               │
+│  → phase1: PROJECT_DIR + PROJECT_SOURCE              │
 │  → phase2: IS_GIT_REPO + CURRENT_BRANCH + 分支列表   │
 │  → phase3: PROJECT_TYPE + MODULE列表                  │
 │  → phase4: LARK_PLUGIN_INSTALLED                     │
@@ -198,6 +198,7 @@ java-code-reviewer/
               ┌────────────────────────┐
               │  采集的环境数据变量：   │
               │  • PROJECT_DIR         │
+              │  • PROJECT_SOURCE      │
               │  • PROJECT_TYPE        │
               │  • PROJECT_SCAN_RESULT │
               │  • CURRENT_BRANCH      │
@@ -340,9 +341,9 @@ java-code-reviewer/
 
 | 脚本 | 阶段 | 输入 | 输出 |
 |------|------|------|------|
-| phase1-detect-project.sh | 一 | 路径/Git URL | PROJECT_DIR |
+| phase1-detect-project.sh | 一 | 路径/Git URL | PROJECT_DIR + PROJECT_SOURCE |
 | phase2-detect-branches.sh | 二A | PROJECT_DIR | 分支列表 |
-| phase2-switch-branch.sh | 二C | PROJECT_DIR + 分支 | 切换结果 |
+| phase2-switch-branch.sh | 二C | PROJECT_DIR + 分支 + PROJECT_SOURCE | 切换结果 |
 | phase3-project-scan.sh | 三 | PROJECT_DIR | PROJECT_TYPE + MODULES |
 | phase4-detect-lark-plugin.sh | 四 | 无 | LARK_PLUGIN_INSTALLED (检测 lark-cli) |
 | phase5-prepare-incremental.sh | 五 | PROJECT_DIR + N | GIT_LOG + FILES + STATS |

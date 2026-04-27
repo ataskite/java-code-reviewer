@@ -27,12 +27,14 @@ if [[ "$INPUT_PATH" =~ ^https?:// ]] || [[ "$INPUT_PATH" =~ ^git:// ]] || [[ "$I
     if perl -e 'alarm 60; exec @ARGV' git -C "$CACHE_DIR" pull 2>&1; then
       echo "✅ 已更新到最新: $CACHE_DIR (分支: $CURRENT_BRANCH)"
       PROJECT_DIR="$CACHE_DIR"
+      PROJECT_SOURCE="git-cache"
     else
       echo "⚠️ 拉取失败或超时，删除缓存并重新克隆..."
       rm -rf "$CACHE_DIR"
       if perl -e 'alarm 120; exec @ARGV' git clone "$INPUT_PATH" "$CACHE_DIR" 2>&1; then
         echo "✅ 重新克隆成功: $CACHE_DIR"
         PROJECT_DIR="$CACHE_DIR"
+        PROJECT_SOURCE="git-cache"
       else
         echo "❌ 克隆失败或超时，请检查Git仓库URL是否正确以及是否有权限访问"
         exit 1
@@ -48,6 +50,7 @@ if [[ "$INPUT_PATH" =~ ^https?:// ]] || [[ "$INPUT_PATH" =~ ^git:// ]] || [[ "$I
     if perl -e 'alarm 120; exec @ARGV' git clone "$INPUT_PATH" "$CACHE_DIR" 2>&1; then
       echo "✅ 克隆成功: $CACHE_DIR"
       PROJECT_DIR="$CACHE_DIR"
+      PROJECT_SOURCE="git-cache"
     else
       echo "❌ 克隆失败或超时，请检查Git仓库URL是否正确以及是否有权限访问"
       exit 1
@@ -57,6 +60,7 @@ else
   if [ -d "$INPUT_PATH" ]; then
     echo "检测到本地项目: $INPUT_PATH"
     PROJECT_DIR="$INPUT_PATH"
+    PROJECT_SOURCE="local"
   else
     echo "❌ 路径不存在: $INPUT_PATH"
     exit 1
@@ -65,3 +69,4 @@ fi
 
 # 输出结果供主agent解析
 echo "PROJECT_DIR=$PROJECT_DIR"
+echo "PROJECT_SOURCE=$PROJECT_SOURCE"
