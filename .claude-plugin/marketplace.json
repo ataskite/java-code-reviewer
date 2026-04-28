@@ -1,21 +1,22 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "java-code-reviewer",
   "description": "Java code review plugin for Claude Code",
   "version": "1.0.0",
   "owner": {
-    "name": "ataskite",
-    "url": "https://github.com/ataskite"
+    "name": "ataskite"
   },
   "plugins": [
     {
       "name": "java-code-reviewer",
-      "description": "AI-powered Java code review with customizable scope and depth",
+      "description": "AI-powered Java code review with 15 dimensions, supporting incremental and stock review modes",
       "source": {
-        "type": "path",
+        "source": "path",
         "path": "."
       },
       "version": "1.0.0",
-      "tags": ["java", "code-review", "quality"]
+      "category": "development",
+      "tags": ["java", "code-review", "quality", "security"]
     }
   ]
 }
