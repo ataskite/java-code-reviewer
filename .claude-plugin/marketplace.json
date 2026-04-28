@@ -10,10 +10,7 @@
     {
       "name": "java-code-reviewer",
       "description": "AI-powered Java code review with 15 dimensions, supporting incremental and stock review modes",
-      "source": {
-        "source": "path",
-        "path": "."
-      },
+      "source": "./",
       "version": "1.0.0",
       "category": "development",
       "tags": ["java", "code-review", "quality", "security"]
