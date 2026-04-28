@@ -405,6 +405,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 
 - description: "执行 Java 代码审查"
 - prompt: 注入审查参数表 + 项目概况 + 增量数据 + 执行指令
+- run_in_background: **true**（🔴 重要：必须设置为 true，让子代理在后台运行，避免阻塞主代理）
 
 参数注入格式：
 
