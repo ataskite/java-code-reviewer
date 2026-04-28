@@ -212,12 +212,12 @@ bash scripts/phase4-detect-lark-plugin.sh
 3. 无需修改 SKILL.md（脚本通过路径引用）
 
 ### 修改审查流程
-1. 编辑 `SKILL.md` 中对应阶段的描述
+1. 编辑 `skills/java-code-reviewer/SKILL.md` 中对应阶段的描述
 2. 如需新脚本，在 `scripts/` 目录创建
 
 ### 修改审查维度或提示词
 1. 审查框架：编辑 `references/review-framework.md`
-2. Agent 提示词：编辑 `prompts/java-code-reviewer.md`
+2. Agent 提示词：编辑 `agents/java-code-reviewer.md`
 3. 确保模式×维度矩阵在两个文件中保持一致
 
 ## License
