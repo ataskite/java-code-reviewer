@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Claude Code plugin** for enterprise-grade Java code review. It provides 15-dimension comprehensive analysis with 4 review modes (fast/standard/deep/security), supporting both incremental and stock review types.
+This is a **Claude Code plugin skill** for enterprise-grade Java code review. It provides 15-dimension comprehensive analysis with 4 review modes (fast/standard/deep/security), supporting both incremental and stock review types.
 
-**Important**: This is a Claude Code **plugin** (not a skill), built on Claude Code's Agent mechanism and Plugin specification.
+**Important**: This repository intentionally uses a **skill-only entry point** plus a dedicated sub-agent. It does not ship a slash command.
 
 ## Architecture
 
@@ -57,10 +57,10 @@ These rules **must** be strictly followed:
 ```
 skills/java-code-reviewer/SKILL.md    # Main skill definition (entry point)
 agents/java-code-reviewer.md          # Sub agent for review execution
-commands/java-code-reviewer.md        # Command definition (minimal)
 references/
   ├── review-framework.md             # 15 dimensions definition + mode matrix
   ├── report-format.md                # Report output format specification
+  ├── feishu-integration.md           # Feishu upload operation reference
   └── examples.md                     # Complete example dialogues
 scripts/
   ├── phase1-detect-project.sh        # Project identification
@@ -100,7 +100,7 @@ After making changes, reload the plugin:
 /reload-plugins
 ```
 
-Verify installation with `/` and look for `/java-code-reviewer:java-code-reviewer` command.
+Verify installation by triggering the skill with a Java review request such as `帮我审查这个项目 /path/to/project`.
 
 ## Important Notes
 
@@ -113,7 +113,7 @@ Verify installation with `/` and look for `/java-code-reviewer:java-code-reviewe
 
 Each interaction step must:
 - Call AskUserQuestion exactly once
-- Set `multiSelect: false`
+- Set `multiSelect: false`, except the multi-module stock-review scope step where selecting multiple modules is allowed
 - Present clear options with descriptions
 - Wait for user response before proceeding
 

@@ -27,11 +27,10 @@
 # 3. 重载插件
 /reload-plugins
 
-# 4. 验证安装：查看命令是否可用
-/
+# 4. 重载后即可通过自然语言触发 skill
 ```
 
-安装成功后，您应该能在命令列表中看到 `/java-code-reviewer:java-code-reviewer` 命令。
+安装成功后，直接告诉 Claude Code 要审查 Java 项目即可触发本 skill。仓库不提供 slash command 入口，避免维护两套触发面。
 
 ### 前置条件
 
@@ -41,7 +40,7 @@
 
 ### 可选：lark-cli 安装
 
-如需使用飞书上传功能（云文档/多维表格），需安装 `lark-cli`：
+如需使用飞书上传功能（云文档/多维表格），需安装 `lark-cli` 并启用 `lark-doc`、`lark-base` 技能：
 
 ```bash
 npm install -g @larksuite/cli
@@ -58,19 +57,9 @@ lark-cli auth login --recommend
 
 插件支持两种使用模式：**交互式模式**（默认）和**快速启动模式**（适合自动化）。
 
-### 方式一：通过 Slash 命令调用（推荐）
-
-Slash 命令是确定性执行，100% 触发插件，推荐使用此方式：
-
-```
-/java-code-reviewer:java-code-reviewer /path/to/project
-```
-
-### 方式二：自然语言触发
+### 方式一：自然语言触发
 
 直接告诉 Claude Code 要审查的项目，插件会逐步引导你选择配置：
-
-> **注意**：自然语言触发有小概率失败，如需确保稳定执行请使用 Slash 命令。
 
 ```
 帮我审查这个项目 /path/to/project
@@ -83,18 +72,18 @@ Slash 命令是确定性执行，100% 触发插件，推荐使用此方式：
    - 选择审查类型（增量/存量）
    - 选择审查范围（条件步骤，取决于审查类型和项目类型）
    - 选择审查模式（fast/standard/deep/security）
-   - 选择飞书上传选项（条件步骤，仅 lark-cli 已安装时询问）
+   - 选择飞书上传选项（条件步骤，仅飞书上传能力可用时询问）
    - 确认执行计划
 3. 确认后启动子 Agent 执行审查
 
 > **交互规则**：使用 Claude Code 的 AskUserQuestion 工具进行结构化交互，每个步骤单独询问，提供清晰的选项供用户选择。
 
-### 模式二：快速启动
+### 方式二：快速启动
 
 通过 `--` 参数直接传入全部配置，跳过交互，适合定时任务和 CI/CD：
 
 ```
-/java-code-reviewer:java-code-reviewer /path/to/project --mode <模式> --type <类型> --scope <范围>
+帮我审查 /path/to/project --mode <模式> --type <类型> --scope <范围>
 ```
 
 #### 参数说明
@@ -111,19 +100,19 @@ Slash 命令是确定性执行，100% 触发插件，推荐使用此方式：
 
 ```bash
 # 最简用法：增量快速扫雷，仅显示报告
-/java-code-reviewer:java-code-reviewer /path/to/project --mode fast --type incremental --scope 5
+帮我审查 /path/to/project --mode fast --type incremental --scope 5
 
 # 存量全量审查，标准模式，上传飞书云文档
-/java-code-reviewer:java-code-reviewer /path/to/project --mode standard --type stock --scope full --upload doc
+帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
 
 # 指定模块存量审查，深度模式，同时上传云文档+多维表格
-/java-code-reviewer:java-code-reviewer /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
+帮我审查 /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
 
 # Git 仓库 + 指定分支
-/java-code-reviewer:java-code-reviewer https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
+帮我审查 https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
 
 # 定时任务场景（最简形式）
-/java-code-reviewer:java-code-reviewer /path/to/project --mode fast --type incremental --scope 1
+帮我审查 /path/to/project --mode fast --type incremental --scope 1
 ```
 
 > **注意**：快速启动模式下，必填参数缺失会直接报错终止，不会降级为交互式模式。

@@ -2,217 +2,43 @@
 description: Java 代码审查 — 支持增量/存量审查、15维度评估、飞书报告上传
 ---
 
-## 执行契约（最高优先级）
+## 执行算法（最高优先级，必须严格按此顺序执行）
 
-以下执行顺序为本技能的**最高优先级操作契约**，必须严格遵守：
+以下是你必须遵循的执行顺序。不允许跳过、合并、重新排序或即兴发挥。
 
-1. **先预扫描，后交互**：无论用户输入多么明确，主agent**必须先完整执行预扫描阶段的 4 个脚本**，收集项目、分支、模块和 lark-cli 环境信息。
-2. **先摘要，后提问**：4 个脚本全部完成后，**必须先输出一次且仅一次「预扫描摘要」**；在这之前，禁止进入参数确认、禁止询问审查模式、禁止启动子agent。
-3. **交互式模式必须结构化单步交互**：如果**未检测到 `--mode` 参数**，则在预扫描摘要之后，**必须立即进入 AskUserQuestion 单步交互**，按技能定义的步骤逐次确认参数。
-4. **快速启动模式禁止交互确认**：如果检测到 `--mode` 参数，则在预扫描摘要之后直接进入参数校验；校验通过后立即启动子agent，**不得再向用户发起 AskUserQuestion**。
-5. **禁止纯文本替代结构化交互**：凡是技能中已经定义为 AskUserQuestion 的步骤，**禁止用普通文本提问来替代 AskUserQuestion**，也禁止一次消息里合并多个交互步骤。
-6. **禁止跳过预扫描摘要**：即使项目路径、分支、审查模式都已通过参数给出，也**不得跳过预扫描摘要展示**。
+### 第一步：模式判定（最先执行）
 
-## 用途
+检测用户输入中是否包含 `--mode` 参数：
+- **包含 `--mode`** → 快速启动模式（FAST_MODE=true），执行预扫描 → 参数校验 → 必要时切换分支 → 直接启动子agent
+- **不包含 `--mode`** → 交互式模式（FAST_MODE=false），执行预扫描 → 逐步 AskUserQuestion → 启动子agent
 
-当用户要求**审查Java代码**、**代码检查**、**发现Bug**、**安全漏洞**、**性能问题**、**潜在风险**、**技术债挖掘**、**安全检查**、**性能优化**、**架构评估**时使用此技能。
+### 第二步：预扫描（4 个脚本按顺序执行，此阶段禁止任何用户交互）
 
-**常见触发场景**：
-- "帮我审查这个项目"
-- "检查一下代码有没有问题"
-- "发现潜在Bug和安全漏洞"
-- "评估代码质量和架构"
-- "挖掘技术债和改进点"
-- "代码安全检查"
-- "性能优化建议"
-
-## 快速启动模式
-
-适用于**定时任务、自动化脚本、CI/CD 集成**等无需人工交互的场景。用户在调用时通过 `--` 参数直接传入全部审查配置，跳过交互式确认，直接执行审查。
-
-### 模式判定
-
-**检测规则**：如果用户输入中包含 `--mode` 参数，则进入**快速启动模式**；否则进入**交互式模式**（默认）。
-
-### 参数规范
-
-| 参数 | 是否必填 | 取值范围 | 说明 |
-|------|----------|----------|------|
-| `--mode` | **必填** | `fast` / `standard` / `deep` / `security` | 审查模式 |
-| `--type` | **必填** | `incremental` / `stock` | 审查类型（增量/存量） |
-| `--scope` | **条件必填** | 见下方规则 | 审查范围 |
-| `--branch` | 可选 | 任意分支名 | 审查分支，默认当前分支 |
-| `--upload` | 可选 | `no` / `doc` / `bitable` / `both` | 飞书上传选项，默认 `no`（不上传） |
-
-**`--scope` 条件必填规则**：
-
-| `--type` 值 | `--scope` 是否必填 | 合法值 | 默认值 |
-|-------------|-------------------|--------|--------|
-| `incremental` | **必填** | 正整数（提交次数），如 `5` | 无，缺则报错 |
-| `stock` + 多模块项目 | **必填** | `full` 或逗号分隔的 Maven 模块名称，如 `user-service,order-service` | 无，缺则报错 |
-| `stock` + 单模块项目 | 可选 | `full`（唯一合法值） | 自动设为 `full` |
-
-### 参数映射
-
-快速启动参数与交互式变量的映射关系：
-
-| 快速启动参数 | 映射变量 | 值转换 |
-|-------------|----------|--------|
-| `--mode fast` | `REVIEW_MODE=fast` | 直接使用 |
-| `--type incremental` | `REVIEW_TYPE=增量审查` | 转换为中文 |
-| `--type stock` | `REVIEW_TYPE=存量审查` | 转换为中文 |
-| `--scope 5`（incremental） | `REVIEW_SCOPE=最近5次提交` | 转换为中文 |
-| `--scope full`（stock） | `REVIEW_SCOPE=全量代码` | 转换为中文 |
-| `--scope user-service,order-service` | `REVIEW_SCOPE=user-service,order-service` | 直接使用 |
-| `--branch develop` | `TARGET_BRANCH=develop` | 直接使用 |
-| `--upload no` | `FEISHU_UPLOAD_OPTION=仅显示报告` | 转换为中文 |
-| `--upload doc` | `FEISHU_UPLOAD_OPTION=上传到云文档` | 转换为中文 |
-| `--upload bitable` | `FEISHU_UPLOAD_OPTION=上传到多维表格` | 转换为中文 |
-| `--upload both` | `FEISHU_UPLOAD_OPTION=同时上传两者` | 转换为中文 |
-| 未提供 `--upload` | `FEISHU_UPLOAD_OPTION=仅显示报告` | 使用默认值 |
-
-### 校验规则
-
-1. **必填参数校验**：`--mode` 和 `--type` 必须存在，缺失任何一个立即报错终止
-2. **参数值校验**：每个参数的值必须在合法取值范围内，不合法立即报错
-3. **条件必填校验**：根据 `--type` 的值校验 `--scope` 是否缺失
-4. **分支存在性校验**：`--branch` 指定的分支如果不存在，报错并列出可用分支
-5. **模块存在性校验**：当 `--type stock --scope` 为具体模块名（非 `full`）时，校验每个模块是否存在于预扫描结果的 `MODULE:` 行中；不存在的模块报错并列出可用模块
-6. **lark-cli 校验**：如果 `--upload` 不是 `no` 但未检测到 lark-cli，警告并降级为 `仅显示报告`
-
-**校验失败时的输出格式**：
-
-```
-❌ 快速启动参数校验失败
-
-缺少必填参数：
-  - --mode: 审查模式（fast/standard/deep/security）
-  - --scope: 审查范围（增量审查时为提交次数，存量审查多模块时为 Maven 模块名称）
-
-正确格式示例：
-  帮我审查 /path/to/project --mode fast --type incremental --scope 5
-  帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
-
-请补充缺失参数后重新调用。
-```
-
-### 快速启动模式下的执行流程
-
-```
-预扫描阶段                  → 正常执行（项目识别 + 分支探测 + 项目扫描 + lark-cli 检测）
-参数校验                    → 校验所有必填参数，失败则终止
-交互式确认                  → ⏭️ 完全跳过
-代码审查阶段：代码审查            → 直接执行（不展示执行计划确认）
-```
-
-**启动提示（快速启动模式专用）**：
-
-校验通过后，输出以下提示后立即调用子agent：
-
-```
-🚀 快速启动模式 — 正在启动独立代码审查子代理...
-
-📋 任务配置：{REVIEW_MODE} 模式 · {REVIEW_TYPE} · {REVIEW_SCOPE}
-🌿 审查分支：{TARGET_BRANCH 或 CURRENT_BRANCH}
-📤 飞书上传：{FEISHU_UPLOAD_OPTION}
-⏱️ 预估耗时：{预估时间}
-📌 子代理将独立执行完整审查流程，完成后自动返回结果。
-```
-
-> **注意**：快速启动模式不输出「💡 温馨提示」和「执行计划确认」，因为调用方是自动化脚本/定时任务。
-
-### 快速启动调用示例
-
-```
-# 增量审查 — 最近5次提交，快速扫雷
-帮我审查 /path/to/project --mode fast --type incremental --scope 5
-
-# 存量审查 — 全量代码，标准模式，上传飞书云文档
-帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
-
-# 存量审查 — 指定模块，深度模式，同时上传飞书两者
-帮我审查 /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
-
-# Git 仓库 + 指定分支 + 增量审查
-帮我审查 https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
-
-# 定时任务场景（最简形式，增量快速扫雷，仅显示报告）
-帮我审查 /path/to/project --mode fast --type incremental --scope 1
-```
-
----
-
-## 工作流程
-
-### 模式判定（首先执行）
-
-**检测用户输入中是否包含 `--mode` 参数**：
-
-| 检测结果 | 执行路径 |
-|----------|----------|
-| 包含 `--mode` | → **快速启动模式**：执行预扫描 → 参数校验 → 直接跳到代码审查阶段 |
-| 不包含 `--mode` | → **交互式模式**（默认）：执行预扫描 → 交互式确认（逐步确认）→ 代码审查阶段 |
-
----
-
-### 预扫描阶段（自动执行，在第一次用户交互前全部完成）
-
-**目标**：在用户等待期间，一次性完成项目识别、分支探测、项目扫描和 lark-cli 检测，收集所有后续交互所需的环境数据。
-
-**⚠️ 核心原则**：此阶段所有脚本按顺序自动执行，**不与用户交互**，全部完成后统一输出预扫描摘要，然后进入交互阶段。
-
-#### 执行步骤
-
-**按以下顺序依次执行 4 个脚本**：
-
-**步骤 1：项目识别**
+从用户输入中提取项目路径（第一个非 `--` 开头的参数，或整个输入路径），然后按以下顺序执行 4 个脚本：
 
 ```bash
+# 脚本1：项目识别
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase1-detect-project.sh "<用户输入的路径>"
-```
+# 输出：PROJECT_DIR=<路径> PROJECT_SOURCE=local|git-cache
 
-脚本输出：
-- `PROJECT_DIR=<项目绝对路径>`
-- `PROJECT_SOURCE=local|git-cache`
-
-**步骤 2：分支探测**
-
-```bash
+# 脚本2：分支探测
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase2-detect-branches.sh "$PROJECT_DIR"
-```
+# 输出：IS_GIT_REPO=true/false CURRENT_BRANCH=<分支> BRANCH: ... BRANCH_REMOTE: ...
 
-脚本输出：
-- `IS_GIT_REPO=true/false`
-- `CURRENT_BRANCH=<分支名>`
-- `BRANCH: 分支名 | 提交日期 | 提交信息`（本地分支列表）
-- `BRANCH_REMOTE: origin/分支名 | 提交日期 | 提交信息`（远程分支列表）
-
-**步骤 3：项目扫描**
-
-```bash
+# 脚本3：项目扫描
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase3-project-scan.sh "$PROJECT_DIR"
-```
+# 输出：PROJECT_TYPE=maven-single|maven-multi|... MODULE:模块名|相对路径|Java文件数|代码行数
 
-脚本输出：
-- `PROJECT_TYPE=maven-single|maven-multi|gradle-single|gradle-multi|unknown`
-- `MODULE:模块名|相对路径|Java文件数|代码行数`
-- 项目概况和模块树的可视化展示
-
-**步骤 4：lark-cli 检测**
-
-```bash
+# 脚本4：lark-cli 检测
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
+# 输出：LARK_PLUGIN_INSTALLED=true|false，失败时附带 LARK_PLUGIN_REASON
 ```
 
-脚本输出：
-- `LARK_PLUGIN_INSTALLED=true|false`
-- `LARK_PLUGIN_NAME=lark-cli`（仅当 `LARK_PLUGIN_INSTALLED=true` 时输出）
+> ⚠️ 4 个脚本必须全部执行完成后才能继续。此阶段禁止调用 AskUserQuestion，禁止输出任何交互式提问。
 
-> **说明**：飞书上传功能依赖 `lark-cli` 命令行工具及配套的 `lark-doc`（云文档）和 `lark-base`（多维表格）两个 skill。此处仅检测 `lark-cli` 是否安装，子 agent 执行上传时会自动调用对应的 skill。
+### 第三步：输出预扫描摘要（不允许跳过）
 
-#### 预扫描摘要输出
-
-**4 个脚本全部执行完成后，必须向用户输出以下统一摘要**（这是预扫描阶段的唯一输出，之后进入交互阶段）：
+4 个脚本全部完成后，必须输出以下格式的摘要（这是预扫描阶段的唯一输出）：
 
 ```
 🔍 预扫描完成
@@ -233,48 +59,59 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 - 模块数量：{K} 个
 - 模块列表：{模块1名称}({n1}类), {模块2名称}({n2}类), ...
 
-🔌 lark-cli：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ lark-cli 已安装，支持飞书上传" / false 时显示 "⚠️ 未安装，报告将保存到本地文件"}
+🔌 lark-cli：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ lark-cli 与 lark-doc/lark-base 技能可用，支持飞书上传" / false 时显示 "⚠️ 飞书上传不可用：{LARK_PLUGIN_REASON}，报告将保存到本地文件"}
 ```
 
-> **注意**：
-> - 预扫描摘要是所有环境数据的统一展示，让用户在交互前对项目有全面了解
-> - 当 lark-cli 未安装时，审查报告将保存为 markdown 文件到项目目录，文件名格式：`code-review-report-{项目名}-{时间戳}.md`
-> - 分支列表解析说明：`BRANCH:` 行为本地分支，`BRANCH_REMOTE:` 行为远程分支（需去掉 `origin/` 前缀展示）
-> - 模块结构解析说明：`MODULE:` 行格式为 `MODULE:模块名|相对路径|Java文件数|代码行数`，主agent在交互步骤3（方案B）动态生成模块选项时，应解析这些行提取模块信息
+### 第四步：参数收集（根据模式选择分支）
+
+#### 分支 A：交互式模式（FAST_MODE=false）
+
+按以下步骤逐个调用 **AskUserQuestion 工具**（禁止用纯文本输出替代）。每个步骤必须单独调用 AskUserQuestion 并等待用户响应后才能进入下一步。**禁止在一次回复中合并多个交互步骤。**
+
+详细步骤定义见下方「交互式确认步骤定义」章节。
+
+#### 分支 B：快速启动模式（FAST_MODE=true）
+
+校验用户提供的所有参数；如提供 `--branch` 且不同于当前分支，必须先执行分支切换；全部通过后进入第五步。详细校验规则见下方「快速启动模式参数规范」章节。
+
+### 第五步：调用子 agent 执行代码审查
+
+使用 Task 工具启动 `java-code-reviewer` 子代理：
+- description: "执行 Java 代码审查"
+- prompt: 注入审查参数表 + 项目概况 + 增量数据
+- subagent_type: "java-code-reviewer"
+
+详细参数注入格式见下方「子 agent 调用规范」章节。
 
 ---
 
-### 交互式确认（通过 AskUserQuestion 收集配置）
+## 交互式确认步骤定义（仅 FAST_MODE=false 时执行）
 
-使用 Claude Code 内置的 AskUserQuestion 工具逐步收集审查配置。每个步骤调用一次 AskUserQuestion，multiSelect: false。
+> **强制规则**：
+> - 每个步骤必须调用 AskUserQuestion 工具，**禁止用纯文本提问替代**
+> - 每个步骤的 AskUserQuestion 调用后，必须等待用户响应
+> - 不允许在一次回复中包含多个交互步骤的动作
+> - 用户响应后，处理结果、设置变量，然后才能进入下一步
 
-**条件步骤规则**：
-- 分支选择：仅在 IS_GIT_REPO=true 且分支数 > 1 时执行
-- 审查范围（存量多模块）：仅在 REVIEW_TYPE=存量审查 且 PROJECT_TYPE 为 *-multi 时执行
-- 飞书上传：仅在 LARK_PLUGIN_INSTALLED=true 时执行
+### 步骤 1：选择审查分支（条件步骤）
 
-#### 步骤1：选择审查分支（条件步骤）
+**触发条件**：IS_GIT_REPO=true 且分支数 > 1。不满足条件时跳过，自动使用 CURRENT_BRANCH。
 
-触发条件：IS_GIT_REPO=true 且分支数 > 1
-
-使用 AskUserQuestion，配置如下：
+**必须调用 AskUserQuestion 工具，参数如下**：
 - question: "检测到 Git 仓库（当前分支：{CURRENT_BRANCH}），请选择要审查的分支"
 - header: "选择分支"
 - options: 从预扫描结果动态生成分支选项（最多 4 个，超 4 个时选最热门的 + "其他分支"选项）
 - multiSelect: false
 
-用户选择后：
+**用户响应后**：
 - 设置 TARGET_BRANCH
-- 如不是当前分支，执行：bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase2-switch-branch.sh "$PROJECT_DIR" "{TARGET_BRANCH}" "$CURRENT_BRANCH" "$PROJECT_SOURCE"
-- 本地项目保护规则不变（PROJECT_SOURCE=local + 未提交改动时不切换）
+- 如果用户选择"其他分支"，不得把字面值作为分支名；必须读取用户提供的自定义分支名。若 AskUserQuestion 当前交互不支持自定义文本，追加一次 AskUserQuestion 收集分支名，header 使用 "输入分支"，options 使用可用分支中的剩余热门分支并允许 Other/free-form。
+- 如不是当前分支，执行：`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase2-switch-branch.sh "$PROJECT_DIR" "{TARGET_BRANCH}" "$CURRENT_BRANCH" "$PROJECT_SOURCE"`
+- 切换失败时继续使用当前分支
 
-切换失败时的处理：
-1. 脚本输出警告，继续使用当前分支
-2. 在执行计划确认环节（步骤6）中明确显示实际使用的分支
+### 步骤 2：选择审查类型
 
-#### 步骤2：选择审查类型
-
-使用 AskUserQuestion，配置如下：
+**必须调用 AskUserQuestion 工具，参数如下**：
 - question: "请选择审查类型"
 - header: "审查类型"
 - options:
@@ -284,11 +121,16 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
     description: "审查指定模块或全量代码"
 - multiSelect: false
 
-变量赋值：增量审查 → REVIEW_TYPE=增量审查，存量审查 → REVIEW_TYPE=存量审查
+**变量赋值**：增量审查 → REVIEW_TYPE=增量审查，存量审查 → REVIEW_TYPE=存量审查
 
-#### 步骤3：选择审查范围（条件步骤）
+### 步骤 3：选择审查范围（条件步骤）
 
-**增量审查时**：
+**触发条件**：
+- 增量审查时 → 必须执行
+- 存量审查 + 多模块 → 必须执行
+- 存量审查 + 单模块 → 跳过，自动设 REVIEW_SCOPE=全量代码
+
+**增量审查时，必须调用 AskUserQuestion 工具，参数如下**：
 - question: "审查最近几次提交的变更？"
 - header: "提交次数"
 - options:
@@ -301,24 +143,27 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
   - label: "最近 10 次"
     description: "审查最近 10 次提交"
 - multiSelect: false
-- 用户选 "Other" 时接受自定义数字输入
 
-**存量审查 + 多模块时**：
+**存量审查 + 多模块时，必须调用 AskUserQuestion 工具，参数如下**：
 - question: "请选择要审查的模块"
 - header: "审查范围"
-- options: 从预扫描结果动态生成（全量代码 + 前 3 个模块，如有更多模块则用户可通过 Other 自定义输入）
-- multiSelect: false
+- options: 从预扫描结果动态生成（全量代码 + 所有模块；模块超过 10 个时展示前 9 个 + "其他模块"）
+- multiSelect: true
 
-变量赋值：
+**存量审查 + 多模块用户响应后**：
+- 选择"全量代码" → REVIEW_SCOPE=全量代码，并忽略其他模块选项
+- 选择一个或多个具体模块 → REVIEW_SCOPE=模块相对路径列表（逗号分隔）
+- 选择"其他模块" → 不得把字面值作为模块名；必须读取用户提供的模块相对路径，支持逗号分隔多个模块。若 AskUserQuestion 当前交互不支持自定义文本，追加一次 AskUserQuestion 收集模块路径，header 使用 "输入模块"。
+- 自定义模块路径必须逐个校验是否存在于预扫描结果的 `MODULE:` 行中；不存在时提示有效模块列表并重新收集，最多重试 3 次
+
+**变量赋值**：
 - 全量代码 → REVIEW_SCOPE=全量代码
 - 具体模块 → REVIEW_SCOPE=模块路径（逗号分隔）
 - 自定义数字 → REVIEW_SCOPE=最近N次提交
 
-**存量审查 + 单模块时**：跳过此步骤，自动设 REVIEW_SCOPE=全量代码
+### 步骤 4：选择审查模式
 
-#### 步骤4：选择审查模式
-
-使用 AskUserQuestion，配置如下：
+**必须调用 AskUserQuestion 工具，参数如下**：
 - question: "请选择审查模式"
 - header: "审查模式"
 - options:
@@ -332,12 +177,12 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
     description: "安全专项，聚焦安全核心维度"
 - multiSelect: false
 
-#### 步骤5：选择飞书上传选项（条件步骤）
+### 步骤 5：选择飞书上传选项（条件步骤）
 
-触发条件：LARK_PLUGIN_INSTALLED=true
+**触发条件**：LARK_PLUGIN_INSTALLED=true。不满足时跳过，设 FEISHU_UPLOAD_OPTION=飞书上传不可用。
 
-使用 AskUserQuestion，配置如下：
-- question: "检测到 lark-cli 已安装，请选择审查结果的处理方式"
+**必须调用 AskUserQuestion 工具，参数如下**：
+- question: "检测到飞书上传能力可用，请选择审查结果的处理方式"
 - header: "飞书上传"
 - options:
   - label: "仅显示报告"
@@ -350,16 +195,15 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
     description: "同时上传云文档和多维表格，聊天中显示精简摘要"
 - multiSelect: false
 
-当 LARK_PLUGIN_INSTALLED=false 时跳过，设 FEISHU_UPLOAD_OPTION=lark-cli未安装。
+### 步骤 6：确认执行计划
 
-#### 步骤6：确认执行计划
+先输出完整执行计划：
 
-确认前展示完整执行计划：
 ```
 📋 执行计划：
 - 项目路径：{PROJECT_DIR}
 - 项目类型：{PROJECT_TYPE}
-- 审查分支：{CURRENT_BRANCH 或 TARGET_BRANCH}（仅 Git 项目显示）
+- 审查分支：{TARGET_BRANCH 或 CURRENT_BRANCH}（仅 Git 项目显示）
 - 审查类型：{REVIEW_TYPE}
 - 审查范围：{REVIEW_SCOPE}
 - 审查模式：{REVIEW_MODE}
@@ -367,7 +211,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 - 飞书上传：{FEISHU_UPLOAD_OPTION}
 ```
 
-使用 AskUserQuestion，配置如下：
+**必须调用 AskUserQuestion 工具，参数如下**：
 - question: "确认以上执行计划后开始审查"
 - header: "确认执行"
 - options:
@@ -377,11 +221,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
     description: "取消本次审查"
 - multiSelect: false
 
-用户选择"确认执行"后进入代码审查阶段；选择"取消"则终止流程。
-
-#### 步骤6确认后的启动提示
-
-用户确认后、调用子代理之前，输出以下格式的提示信息：
+**用户确认后的启动提示**：
 
 ```
 🚀 正在启动独立代码审查子代理...
@@ -390,15 +230,15 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 ⏱️ 预估耗时：{预估时间}
 📌 子代理将独立执行完整审查流程，完成后自动返回结果。
 
-{FEISHU_UPLOAD_OPTION 不是「仅显示报告」/「lark-cli未安装」时，追加以下行}
+{飞书上传时追加}
 📤 审查完成后将自动上传到飞书（{FEISHU_UPLOAD_OPTION}），无需手动操作。
 
 💡 温馨提示：审查期间您可以继续使用 Claude Code 进行其他操作。
 ```
 
-**预估时间参考**（根据 REVIEW_MODE + 项目规模估算）：
+**预估时间参考**：
 
-| 模式 | 小型项目（<50 类） | 中型项目（50-200 类） | 大型项目（>200 类） |
+| 模式 | 小型（<50类） | 中型（50-200类） | 大型（>200类） |
 |------|:---:|:---:|:---:|
 | fast | 2-3 分钟 | 3-5 分钟 | 5-8 分钟 |
 | standard | 5-8 分钟 | 8-15 分钟 | 15-25 分钟 |
@@ -407,19 +247,124 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 
 ---
 
-### 代码审查阶段：代码审查（使用子agent执行）
+## 快速启动模式参数规范
 
-**目标**：将用户确认的审查配置和项目信息作为参数注入子agent prompt，由子agent独立完成代码审查和飞书上传（可选），最后将结果汇总返回主agent。
+适用于定时任务、自动化脚本、CI/CD 集成等无需人工交互的场景。
 
-#### 子代理调用方式
+### 参数规范
 
-使用 Agent tool 启动 plugin 内置的 `java-code-reviewer` 子代理：
+| 参数 | 是否必填 | 取值范围 | 说明 |
+|------|----------|----------|------|
+| `--mode` | **必填** | `fast` / `standard` / `deep` / `security` | 审查模式 |
+| `--type` | **必填** | `incremental` / `stock` | 审查类型 |
+| `--scope` | 条件必填 | 见下方规则 | 审查范围 |
+| `--branch` | 可选 | 任意分支名 | 审查分支，默认当前分支 |
+| `--upload` | 可选 | `no` / `doc` / `bitable` / `both` | 飞书上传选项，默认 `no` |
 
+**`--scope` 条件必填规则**：
+
+| `--type` 值 | `--scope` 是否必填 | 合法值 | 默认值 |
+|-------------|-------------------|--------|--------|
+| `incremental` | **必填** | 正整数（提交次数） | 无，缺则报错 |
+| `stock` + 多模块 | **必填** | `full` 或逗号分隔模块名 | 无，缺则报错 |
+| `stock` + 单模块 | 可选 | `full` | 自动设为 `full` |
+
+### 参数映射
+
+| 快速启动参数 | 映射变量 | 值转换 |
+|-------------|----------|--------|
+| `--mode fast` | `REVIEW_MODE=fast` | 直接使用 |
+| `--type incremental` | `REVIEW_TYPE=增量审查` | 转换为中文 |
+| `--type stock` | `REVIEW_TYPE=存量审查` | 转换为中文 |
+| `--scope 5`（incremental） | `REVIEW_SCOPE=最近5次提交` | 转换为中文 |
+| `--scope full`（stock） | `REVIEW_SCOPE=全量代码` | 转换为中文 |
+| `--scope user-service,order-service` | `REVIEW_SCOPE=user-service,order-service` | 直接使用 |
+| `--branch develop` | `TARGET_BRANCH=develop` | 直接使用 |
+| `--upload no` / 未提供 | `FEISHU_UPLOAD_OPTION=仅显示报告` | 转换为中文 |
+| `--upload doc` | `FEISHU_UPLOAD_OPTION=上传到云文档` | 转换为中文 |
+| `--upload bitable` | `FEISHU_UPLOAD_OPTION=上传到多维表格` | 转换为中文 |
+| `--upload both` | `FEISHU_UPLOAD_OPTION=同时上传两者` | 转换为中文 |
+
+### 校验规则
+
+1. `--mode` 和 `--type` 必须同时存在，缺失任何一个立即报错终止
+2. 每个参数值必须在合法取值范围内
+3. 根据 `--type` 的值校验 `--scope` 是否缺失
+4. `--branch` 指定的分支不存在时报错并列出可用分支
+5. `--scope` 为具体模块名时校验模块是否存在于预扫描结果中
+6. `--upload` 不是 `no` 但 LARK_PLUGIN_INSTALLED=false 时，警告并降级为 `仅显示报告`
+
+### 快速启动分支处理
+
+参数校验通过后、启动子 agent 前：
+
+1. 未提供 `--branch`：TARGET_BRANCH=CURRENT_BRANCH
+2. 提供 `--branch` 且等于 CURRENT_BRANCH：无需切换
+3. 提供 `--branch` 且不同于 CURRENT_BRANCH：必须执行
+   ```bash
+   bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase2-switch-branch.sh "$PROJECT_DIR" "{TARGET_BRANCH}" "$CURRENT_BRANCH" "$PROJECT_SOURCE"
+   ```
+4. 快速启动模式下，如果显式分支切换失败，必须终止本次审查并说明原因，不得静默回退到当前分支继续审查
+5. 切换成功后，重新记录 CURRENT_BRANCH/TARGET_BRANCH，用切换后的分支生成增量数据和调用子 agent
+
+**校验失败输出格式**：
+
+```
+❌ 快速启动参数校验失败
+
+缺少必填参数：
+  - --mode: 审查模式（fast/standard/deep/security）
+  - --scope: ...
+
+正确格式示例：
+  帮我审查 /path/to/project --mode fast --type incremental --scope 5
+  帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
+
+请补充缺失参数后重新调用。
+```
+
+### 快速启动校验通过后的启动提示
+
+```
+🚀 快速启动模式 — 正在启动独立代码审查子代理...
+
+📋 任务配置：{REVIEW_MODE} 模式 · {REVIEW_TYPE} · {REVIEW_SCOPE}
+🌿 审查分支：{TARGET_BRANCH 或 CURRENT_BRANCH}
+📤 飞书上传：{FEISHU_UPLOAD_OPTION}
+⏱️ 预估耗时：{预估时间}
+📌 子代理将独立执行完整审查流程，完成后自动返回结果。
+```
+
+### 快速启动调用示例
+
+```
+# 增量审查 — 最近5次提交
+帮我审查 /path/to/project --mode fast --type incremental --scope 5
+
+# 存量审查 — 全量代码，上传飞书云文档
+帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
+
+# 存量审查 — 指定模块，深度模式
+帮我审查 /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
+
+# 指定分支 + 增量审查
+帮我审查 https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
+```
+
+---
+
+## 子 agent 调用规范
+
+### 调用方式
+
+使用 Task 工具启动内置的 `java-code-reviewer` 子代理：
 - description: "执行 Java 代码审查"
-- prompt: 注入审查参数表 + 项目概况 + 增量数据 + 执行指令
-- run_in_background: **true**（🔴 重要：必须设置为 true，让子代理在后台运行，避免阻塞主代理）
+- subagent_type: "java-code-reviewer"
+- prompt: 下方参数注入格式
 
-参数注入格式：
+不要传 `run_in_background`；该字段不属于 Claude Code Task 调用契约。子 agent 会独立执行审查，主 agent 等待其返回结构化结果后展示给用户。
+
+### 参数注入格式
 
 ```
 ## 审查任务参数（外部注入，请直接使用，无需再次确认）
@@ -451,54 +396,42 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 请基于以上审查参数，立即开始执行代码审查。不要进行任何用户交互或询问，直接从代码审查开始执行。
 ```
 
-不再需要手动读取 agent 提示词文件——Agent tool 会自动加载 agents/java-code-reviewer.md 的完整内容。仅需在 prompt 中传入审查参数和辅助数据。
-
-#### 参数来源说明
+### 参数来源说明
 
 | 变量名 | 来源 | 示例值 |
 |--------|------|--------|
-| `PROJECT_DIR` | 预扫描项目识别输出 | `/tmp/{仓库名}` 或本地路径 |
-| `PROJECT_SOURCE` | 预扫描项目识别输出 | `local` / `git-cache` |
-| `PROJECT_NAME` | `basename "$PROJECT_DIR"` 自动提取 | `spring-ai-agent-utils` |
-| `PROJECT_TYPE` | 预扫描项目扫描输出 | `maven-single` / `maven-multi` / `gradle-single` / `gradle-multi` / `unknown` |
-| `REVIEW_TYPE` | 交互步骤2用户选择 / 快速启动 `--type` | `增量审查` / `存量审查` |
-| `REVIEW_SCOPE` | 交互步骤3用户选择 / 快速启动 `--scope` | `最近5次提交` / `全量代码` / `user-service,order-service` |
-| `REVIEW_MODE` | 交互步骤4用户选择 / 快速启动 `--mode` | `fast` / `standard` / `deep` / `security` |
-| `FEISHU_UPLOAD_OPTION` | 交互步骤5用户选择 / 快速启动 `--upload` | `仅显示报告` / `上传到云文档` / `上传到多维表格` / `同时上传两者` / `lark-cli未安装` |
-| `PROJECT_SCAN_RESULT` | 预扫描完整输出 | 项目概况、模块结构的原始输出 |
-| `REVIEW_FILE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | 本次审查涉及的 Java 文件数量（如 `76`） |
-| `REVIEW_LINE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | 本次审查涉及的代码总行数（如 `16637`） |
-| `GIT_LOG_OUTPUT` | 条件生成（见下方） | `git log --oneline -N` 的输出 |
-| `CHANGED_FILES_OUTPUT` | 条件生成（仅增量审查） | `git diff --name-only` 的输出，变更文件路径列表 |
-| `DIFF_STATS_OUTPUT` | 条件生成（仅增量审查） | `git diff --stat` 的输出，各文件改动行数统计 |
+| `PROJECT_DIR` | phase1 脚本输出 | `/tmp/{仓库名}` 或本地路径 |
+| `PROJECT_SOURCE` | phase1 脚本输出 | `local` / `git-cache` |
+| `PROJECT_NAME` | `basename "$PROJECT_DIR"` | `spring-ai-agent-utils` |
+| `PROJECT_TYPE` | phase3 脚本输出 | `maven-single` 等 |
+| `REVIEW_TYPE` | 交互步骤2 / 快速启动 `--type` | `增量审查` / `存量审查` |
+| `REVIEW_SCOPE` | 交互步骤3 / 快速启动 `--scope` | `最近5次提交` / `全量代码` |
+| `REVIEW_MODE` | 交互步骤4 / 快速启动 `--mode` | `fast` / `standard` 等 |
+| `FEISHU_UPLOAD_OPTION` | 交互步骤5 / 快速启动 `--upload` | `仅显示报告` 等 |
+| `PROJECT_SCAN_RESULT` | phase3 完整输出 | 项目概况、模块结构 |
+| `REVIEW_FILE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | `76` |
+| `REVIEW_LINE_COUNT` | 从 `PROJECT_SCAN_RESULT` 解析 | `16637` |
+| `GIT_LOG_OUTPUT` | phase5 脚本输出（仅增量） | `git log --oneline -N` |
+| `CHANGED_FILES_OUTPUT` | phase5 脚本输出（仅增量） | `git diff --name-only` |
+| `DIFF_STATS_OUTPUT` | phase5 脚本输出（仅增量） | `git diff --stat` |
 
-#### 增量审查预处理（仅增量审查时执行）
+### 增量审查预处理（仅增量审查时执行）
 
-在调用子agent之前，先执行以下命令获取提交记录、变更文件列表和变更统计。**注意**：脚本会自动处理提交数不足 N 的情况，防止 `HEAD~N` 越界。
-
-**执行脚本**：
+在调用子 agent 之前，执行：
 ```bash
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase5-prepare-incremental.sh "$PROJECT_DIR" {N}
 ```
 
-脚本输出（三个部分用 `# ===` 分隔）：
-1. `# === 提交记录 ===` 之后的内容 → `GIT_LOG_OUTPUT`
-2. `# === 变更文件列表 ===` 之后的内容 → `CHANGED_FILES_OUTPUT`
-3. `# === 变更统计 ===` 之后的内容 → `DIFF_STATS_OUTPUT`
+脚本输出用 `# ===` 分隔为三部分：
+1. `# === 提交记录 ===` → GIT_LOG_OUTPUT
+2. `# === 变更文件列表 ===` → CHANGED_FILES_OUTPUT
+3. `# === 变更统计 ===` → DIFF_STATS_OUTPUT
 
-**主 Agent 需解析脚本输出，分别提取三个部分作为独立变量注入子 Agent**。
+**异常处理**：如果 CHANGED_FILES_OUTPUT 为空，告知用户没有变更文件，询问是否调整提交次数或切换到存量审查，不调用子 agent。
 
-**异常情况处理**：
-- 如果 `CHANGED_FILES_OUTPUT` 为空（没有变更文件），主agent应：
-  1. 告知用户：选择的提交范围内没有变更文件
-  2. 询问是否调整提交次数或切换到存量审查
-  3. 不应调用子agent处理空文件列表
+### 子 agent 返回结果处理
 
-#### 子agent返回结果
-
-子agent执行完成后，根据飞书上传选项返回不同格式的结果，主agent需将此结果展示给用户。
-
-**已上传飞书时**（简化汇总 + 飞书链接）：
+**已上传飞书时**：
 
 ```
 ✅ 代码审查已完成！⏱️ 耗时 {X} 分 {Y} 秒
@@ -516,9 +449,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase5-prepare-incremental.sh "$PROJECT_DIR" 
 👉 详细报告请点击上方飞书链接查看。
 ```
 
-> **耗时计算**：`当前时间 - START_TIME`，格式为 `X 分 Y 秒`（不足1分钟时只显示秒）。
-
-**未上传飞书时**（本地文件 + 完整报告）：子agent会将审查报告保存到本地项目目录（文件名格式：`code-review-report-{PROJECT_NAME}-{YYYYMMDD-HHmmss}.md`），然后输出完整报告供用户查看。主agent在展示结果时，需在报告开头追加文件路径信息：
+**未上传飞书时**：
 
 ```
 📄 审查报告已保存到本地文件：
@@ -534,38 +465,32 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase5-prepare-incremental.sh "$PROJECT_DIR" 
 💡 建议：{从报告中提取一句话关键建议}
 ```
 
-**异常降级**：如果飞书上传步骤失败，子agent会降级为输出完整报告，并说明失败原因。主agent应将结果直接展示给用户。
-
+**飞书上传失败时**：降级为未上传模式，输出完整报告并说明失败原因。
 
 ---
 
 ## 重要规则
 
-### 强制规则
-
-> **快速启动模式豁免**：当检测到 `--mode` 参数进入快速启动模式时，以下标有 ⚡ 的规则**不适用**，其余规则仍然生效。
-
 1. **输入校验**：用户自定义输入必须与当前问题相关且合理，无效输入需提示重新选择，每步最多重试 3 次
-2. **执行前强制确认** ⚡：必须展示执行计划并等待用户确认，**不能跳过**
+2. **执行前强制确认**：交互式模式下必须展示执行计划并等待用户确认（快速启动模式豁免）
 3. **三个核心选项必须全部明确**：审查类型 + 审查范围 + 审查模式，缺一不可
-4. **交互式模式强制交互流程** ⚡：仅当**未检测到 `--mode` 参数**、进入交互式模式时，才必须依次通过 AskUserQuestion 逐步引导用户完成所有步骤；**快速启动模式必须跳过交互式确认**
-5. **强制中文输出**：所有交互和报告都必须使用中文
-6. **最终确认前零深度审查动作**：在用户最终确认前，**不得启动子agent或执行正式代码审查**；但允许执行本技能定义的**预扫描阶段**（项目识别、分支探测、项目扫描、lark-cli 检测），用于收集交互所需的环境数据
-7. **快速启动参数完整性**：快速启动模式下，`--mode` 和 `--type` 必须同时存在，`--scope` 根据条件必填规则校验，缺少任一必填参数立即报错终止，**不允许降级为交互式模式**
+4. **强制中文输出**：所有交互和报告都必须使用中文
+5. **最终确认前零深度审查动作**：在用户最终确认前，不得启动子 agent 或执行正式代码审查；但允许执行预扫描脚本
+6. **快速启动参数完整性**：`--mode` 和 `--type` 必须同时存在，缺少必填参数立即报错终止，不允许降级为交互式模式
 
 ### 条件步骤规则
 
-1. **单模块项目自动跳过步骤3**：如果 `PROJECT_TYPE` 为 `maven-single` 或 `gradle-single` 且步骤2选择了「存量审查」，步骤3（选择审查范围）必须跳过，自动设 `REVIEW_SCOPE=全量代码`
-2. **lark-cli 检测**：预扫描阶段检测 lark-cli 是否安装，根据结果决定是否执行步骤5（飞书上传选项）；未安装时自动设 `FEISHU_UPLOAD_OPTION=lark-cli未安装`
-3. **飞书上传执行**：子agent根据 `FEISHU_UPLOAD_OPTION` 参数执行对应上传动作。上传飞书云文档必须使用 `lark-doc` skill，上传多维表格必须使用 `lark-base` skill，均通过 `lark-cli` 命令行工具执行
-4. **Git 分支选择**：步骤1仅在项目为 Git 仓库且存在多个活跃分支时执行；非 Git 项目或单分支项目自动跳过
+- **单模块项目自动跳过步骤3**：`PROJECT_TYPE` 为 `*-single` 且选择存量审查时，自动设 `REVIEW_SCOPE=全量代码`
+- **lark-cli 检测**：lark-cli、lark-doc、lark-base 任一不可用时自动设 `FEISHU_UPLOAD_OPTION=飞书上传不可用`
+- **Git 分支选择**：仅在 Git 仓库且多分支时执行步骤1
+- **飞书上传执行**：子 agent 使用 `lark-doc`/`lark-base` skill，通过 `lark-cli` 执行
 
 ---
 
 ## 错误处理
 
 如果用户输入无法识别或与当前问题无关：
-- 输出 `⚠️ 输入无效` 提示，重新展示当前步骤的选项文本
+- 输出 `⚠️ 输入无效` 提示，重新展示当前步骤的选项
 - 每个步骤最多重试 3 次
 - 超过 3 次仍无效时，输出 `❌ 多次输入无效，已终止本次审查` 并结束流程
 
