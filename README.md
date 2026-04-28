@@ -18,8 +18,8 @@
 ### 方式一：通过插件市场安装（推荐）
 
 ```bash
-# 添加插件市场
-/plugin marketplace add ataskite/java-code-reviewer
+# 添加插件市场（指定分支）
+/plugin marketplace add ataskite/java-code-reviewer@claude-code-reviewer
 
 # 安装插件
 /plugin install java-code-reviewer@java-code-reviewer
