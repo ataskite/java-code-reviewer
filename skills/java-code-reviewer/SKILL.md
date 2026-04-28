@@ -222,11 +222,12 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase4-detect-lark-plugin.sh
 - 模块数量：{K} 个
 - 模块列表：{模块1名称}({n1}类), {模块2名称}({n2}类), ...
 
-🔌 lark-cli：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ lark-cli 已安装" / false 时显示 "⚠️ 未安装"}
+🔌 lark-cli：{LARK_PLUGIN_INSTALLED=true 时显示 "✅ lark-cli 已安装，支持飞书上传" / false 时显示 "⚠️ 未安装，报告将保存到本地文件"}
 ```
 
 > **注意**：
 > - 预扫描摘要是所有环境数据的统一展示，让用户在交互前对项目有全面了解
+> - 当 lark-cli 未安装时，审查报告将保存为 markdown 文件到项目目录，文件名格式：`code-review-report-{项目名}-{时间戳}.md`
 > - 分支列表解析说明：`BRANCH:` 行为本地分支，`BRANCH_REMOTE:` 行为远程分支（需去掉 `origin/` 前缀展示）
 > - 模块结构解析说明：`MODULE:` 行格式为 `MODULE:模块名|相对路径|Java文件数|代码行数`，主agent在交互步骤3（方案B）动态生成模块选项时，应解析这些行提取模块信息
 
@@ -506,9 +507,16 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase5-prepare-incremental.sh "$PROJECT_DIR" 
 
 > **耗时计算**：`当前时间 - START_TIME`，格式为 `X 分 Y 秒`（不足1分钟时只显示秒）。
 
-**未上传飞书时**（完整报告）：子agent会将第三步生成的完整审查报告原样输出，包含所有章节（审查配置快照、执行摘要、各级别问题详情、修复优先级、总结等）。主agent在展示结果时，需在报告末尾追加耗时汇总：
+**未上传飞书时**（本地文件 + 完整报告）：子agent会将审查报告保存到本地项目目录（文件名格式：`code-review-report-{PROJECT_NAME}-{YYYYMMDD-HHmmss}.md`），然后输出完整报告供用户查看。主agent在展示结果时，需在报告开头追加文件路径信息：
 
 ```
+📄 审查报告已保存到本地文件：
+   {PROJECT_DIR}/code-review-report-{PROJECT_NAME}-{YYYYMMDD-HHmmss}.md
+
+{完整报告内容}
+
+---
+
 ✅ 代码审查已完成！⏱️ 耗时 {X} 分 {Y} 秒
 
 📊 审查结果：{从报告中提取问题总数}
