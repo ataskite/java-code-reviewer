@@ -15,34 +15,23 @@
 
 ## 安装
 
-### 方式一：通过插件市场安装（推荐）
+### 通过插件市场安装（推荐）
 
 ```bash
-# 添加插件市场（指定分支）
+# 1. 添加插件市场
 /plugin marketplace add ataskite/java-code-reviewer@claude-code-reviewer
 
-# 安装插件
+# 2. 安装插件
 /plugin install java-code-reviewer@java-code-reviewer
+
+# 3. 重载插件
+/reload-plugins
+
+# 4. 验证安装：输入 / 查看可用命令
+/
 ```
 
-### 方式二：本地安装
-
-将本仓库克隆到本地项目：
-
-```bash
-# 在项目根目录下创建插件目录
-mkdir -p .claude/plugins
-
-# 克隆插件仓库
-git clone https://github.com/ataskite/java-code-reviewer .claude/plugins/java-code-reviewer
-```
-
-**验证安装**：
-```bash
-ls .claude/plugins/java-code-reviewer/skills/java-code-reviewer/SKILL.md
-```
-
-安装后重启 Claude Code。
+安装成功后，您应该能在命令列表中看到 `java-code-reviewer` 命令。
 
 ### 前置条件
 
