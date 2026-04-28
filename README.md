@@ -1,8 +1,8 @@
-# Java Code Reviewer Skill
+# Java Code Reviewer Plugin
 
-> **⚠️ 平台说明**：本技能为 **Claude Code 专用插件**，基于 Claude Code 的 Agent 机制和 Skill 规范开发。
+> **⚠️ 平台说明**：本插件为 **Claude Code 专用插件**，基于 Claude Code 的 Agent 机制和 Plugin 规范开发。
 
-企业级 Java 代码审查专用技能，支持 15 个维度全面审查，4 种审查模式，增量/存量两种审查类型，支持交互式和快速启动两种使用方式。
+企业级 Java 代码审查插件，支持 15 个维度全面审查，4 种审查模式，增量/存量两种审查类型，支持交互式和快速启动两种使用方式。
 
 ## 特性
 
@@ -56,7 +56,7 @@ lark-cli auth login --recommend
 
 ## 使用方式
 
-技能支持两种使用模式：**交互式模式**（默认）和**快速启动模式**（适合自动化）。
+插件支持两种使用模式：**交互式模式**（默认）和**快速启动模式**（适合自动化）。
 
 ### 方式一：通过 Slash 命令调用
 
@@ -66,7 +66,7 @@ lark-cli auth login --recommend
 
 ### 方式二：自然语言触发
 
-直接告诉 Claude Code 要审查的项目，技能会逐步引导你选择配置：
+直接告诉 Claude Code 要审查的项目，插件会逐步引导你选择配置：
 
 ```
 帮我审查这个项目 /path/to/project
