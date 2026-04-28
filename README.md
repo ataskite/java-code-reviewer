@@ -31,7 +31,7 @@
 /
 ```
 
-安装成功后，您应该能在命令列表中看到 `java-code-reviewer` 命令。
+安装成功后，您应该能在命令列表中看到 `/java-code-reviewer:java-code-reviewer` 命令，这就是插件的启动入口。
 
 ### 前置条件
 
@@ -58,15 +58,19 @@ lark-cli auth login --recommend
 
 插件支持两种使用模式：**交互式模式**（默认）和**快速启动模式**（适合自动化）。
 
-### 方式一：通过 Slash 命令调用
+### 方式一：通过 Slash 命令调用（推荐）
+
+Slash 命令是确定性执行，100% 触发插件，推荐使用此方式：
 
 ```
-/java-code-reviewer /path/to/project
+/java-code-reviewer:java-code-reviewer /path/to/project
 ```
 
 ### 方式二：自然语言触发
 
 直接告诉 Claude Code 要审查的项目，插件会逐步引导你选择配置：
+
+> **注意**：自然语言触发有小概率失败，如需确保稳定执行请使用 Slash 命令。
 
 ```
 帮我审查这个项目 /path/to/project
@@ -90,7 +94,7 @@ lark-cli auth login --recommend
 通过 `--` 参数直接传入全部配置，跳过交互，适合定时任务和 CI/CD：
 
 ```
-帮我审查 /path/to/project --mode <模式> --type <类型> --scope <范围>
+/java-code-reviewer:java-code-reviewer /path/to/project --mode <模式> --type <类型> --scope <范围>
 ```
 
 #### 参数说明
@@ -107,19 +111,19 @@ lark-cli auth login --recommend
 
 ```bash
 # 最简用法：增量快速扫雷，仅显示报告
-帮我审查 /path/to/project --mode fast --type incremental --scope 5
+/java-code-reviewer:java-code-reviewer /path/to/project --mode fast --type incremental --scope 5
 
 # 存量全量审查，标准模式，上传飞书云文档
-帮我审查 /path/to/project --mode standard --type stock --scope full --upload doc
+/java-code-reviewer:java-code-reviewer /path/to/project --mode standard --type stock --scope full --upload doc
 
 # 指定模块存量审查，深度模式，同时上传云文档+多维表格
-帮我审查 /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
+/java-code-reviewer:java-code-reviewer /path/to/project --mode deep --type stock --scope user-service,order-service --upload both
 
 # Git 仓库 + 指定分支
-帮我审查 https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
+/java-code-reviewer:java-code-reviewer https://github.com/org/repo.git --mode standard --type incremental --scope 3 --branch develop --upload bitable
 
 # 定时任务场景（最简形式）
-帮我审查 /path/to/project --mode fast --type incremental --scope 1
+/java-code-reviewer:java-code-reviewer /path/to/project --mode fast --type incremental --scope 1
 ```
 
 > **注意**：快速启动模式下，必填参数缺失会直接报错终止，不会降级为交互式模式。
