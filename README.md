@@ -1,6 +1,6 @@
 # Java Code Reviewer Skill
 
-> **⚠️ 平台说明**：本技能为 **OpenClaw 专用版本**，依赖 OpenClaw 的 `sessions_spawn` 子代理机制和 OpenClaw Skill 规范。不支持 Claude Code 或其他 Agent 运行时。
+> **⚠️ 平台说明**：本技能为 **Claude Code 专用插件**，基于 Claude Code 的 Agent 机制和 Skill 规范开发。
 
 企业级 Java 代码审查专用技能，支持 15 个维度全面审查，4 种审查模式，增量/存量两种审查类型，支持交互式和快速启动两种使用方式。
 
@@ -17,27 +17,33 @@
 
 ### 前置条件
 
-- OpenClaw 已安装并运行
+- Claude Code 已安装
 - Bash 3.0+ 环境（macOS / Linux）
 - 系统已安装 `git` 命令
 
 ### 快速安装
 
-将本仓库克隆到 OpenClaw 的 skills 目录下即可：
+将本仓库克隆到 Claude Code 的 skills 目录下即可：
 
 ```bash
-git clone <本仓库地址> ~/.openclaw/workspace-coding/skills/java-code-reviewer
+git clone <本仓库地址> ~/.claude/skills/java-code-reviewer
 ```
 
-> 如果目标目录已存在，先删除再克隆：`rm -rf ~/.openclaw/workspace-coding/skills/java-code-reviewer`
+> 如果目标目录已存在，先删除再克隆：`rm -rf ~/.claude/skills/java-code-reviewer`
 
 **验证**：确认以下文件存在即可：
 
 ```bash
-ls ~/.openclaw/workspace-coding/skills/java-code-reviewer/SKILL.md
+ls ~/.claude/skills/java-code-reviewer/skills/java-code-reviewer/SKILL.md
 ```
 
-安装完成后重启 OpenClaw 或等待技能自动热加载。测试命令：
+安装完成后重启 Claude Code 或等待技能自动加载。测试命令：
+
+```
+/java-code-reviewer:java-code-reviewer /path/to/your/java/project
+```
+
+或在对话中使用：
 
 ```
 帮我审查这个项目 /path/to/your/java/project
@@ -62,9 +68,15 @@ lark-cli auth login --recommend
 
 技能支持两种使用模式：**交互式模式**（默认）和**快速启动模式**（适合自动化）。
 
-### 模式一：交互式（默认）
+### 方式一：通过 Slash 命令调用
 
-直接告诉 OpenClaw 要审查的项目，技能会逐步引导你选择配置：
+```
+/java-code-reviewer:java-code-reviewer /path/to/project
+```
+
+### 方式二：自然语言触发
+
+直接告诉 Claude Code 要审查的项目，技能会逐步引导你选择配置：
 
 ```
 帮我审查这个项目 /path/to/project
@@ -72,7 +84,7 @@ lark-cli auth login --recommend
 
 交互流程：
 1. **预扫描**（自动）：项目识别 → 分支探测 → 项目扫描 → lark-cli 检测
-2. **逐步确认**（严格单步交互）：
+2. **逐步确认**（使用 AskUserQuestion 工具）：
    - 选择分支（条件步骤，仅多分支时询问）
    - 选择审查类型（增量/存量）
    - 选择审查范围（条件步骤，取决于审查类型和项目类型）
@@ -81,7 +93,7 @@ lark-cli auth login --recommend
    - 确认执行计划
 3. 确认后启动子 Agent 执行审查
 
-> **交互规则**：每个步骤单独询问，不会将多个选项（如审查范围和审查模式）合并在一个回复中。所有选项以纯文本形式展示，等待用户自由输入。
+> **交互规则**：使用 Claude Code 的 AskUserQuestion 工具进行结构化交互，每个步骤单独询问，提供清晰的选项供用户选择。
 
 ### 模式二：快速启动
 

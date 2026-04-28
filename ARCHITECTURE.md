@@ -1,6 +1,6 @@
 # Java Code Reviewer 技能架构说明
 
-> **⚠️ 平台说明**：本技能为 **OpenClaw 专用版本**，依赖 OpenClaw 的 `sessions_spawn` 子代理机制和 OpenClaw Skill 规范。不支持 Claude Code 或其他 Agent 运行时。
+> **⚠️ 平台说明**：本技能为 **Claude Code 专用插件**，基于 Claude Code 的 Agent 机制和 Skill 规范开发。
 
 ## 📁 文件结构
 
@@ -414,7 +414,7 @@ java-code-reviewer/
 - 主Agent专注用户交互和流程控制
 - 子Agent专注代码审查任务
 - 长时间审查不阻塞主Agent
-- 用户可在审查期间继续使用OpenClaw
+- 用户可在审查期间继续使用 Claude Code
 
 ### 2. 双模式运行
 
