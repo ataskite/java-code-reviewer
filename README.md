@@ -27,11 +27,11 @@
 # 3. 重载插件
 /reload-plugins
 
-# 4. 验证安装：输入 / 查看可用命令
+# 4. 验证安装：查看命令是否可用
 /
 ```
 
-安装成功后，您应该能在命令列表中看到 `/java-code-reviewer:java-code-reviewer` 命令，这就是插件的启动入口。
+安装成功后，您应该能在命令列表中看到 `/java-code-reviewer:java-code-reviewer` 命令。
 
 ### 前置条件
 
