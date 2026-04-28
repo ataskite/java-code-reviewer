@@ -5,7 +5,7 @@
   "author": {
     "name": "ataskite"
   },
-  "repository": "https://gitlab.your-company.com/team/java-code-reviewer-plugin",
+  "repository": "https://github.com/ataskite/java-code-reviewer",
   "license": "MIT",
   "keywords": ["java", "code-review", "security", "sonar"]
 }

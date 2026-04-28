@@ -15,39 +15,40 @@
 
 ## 安装
 
+### 方式一：通过插件市场安装（推荐）
+
+```bash
+# 添加插件市场
+/plugin marketplace add ataskite/java-code-reviewer
+
+# 安装插件
+/plugin install java-code-reviewer@java-code-reviewer
+```
+
+### 方式二：本地安装
+
+将本仓库克隆到本地项目：
+
+```bash
+# 在项目根目录下创建插件目录
+mkdir -p .claude/plugins
+
+# 克隆插件仓库
+git clone https://github.com/ataskite/java-code-reviewer .claude/plugins/java-code-reviewer
+```
+
+**验证安装**：
+```bash
+ls .claude/plugins/java-code-reviewer/skills/java-code-reviewer/SKILL.md
+```
+
+安装后重启 Claude Code。
+
 ### 前置条件
 
 - Claude Code 已安装
 - Bash 3.0+ 环境（macOS / Linux）
 - 系统已安装 `git` 命令
-
-### 快速安装
-
-将本仓库克隆到 Claude Code 的 skills 目录下即可：
-
-```bash
-git clone <本仓库地址> ~/.claude/skills/java-code-reviewer
-```
-
-> 如果目标目录已存在，先删除再克隆：`rm -rf ~/.claude/skills/java-code-reviewer`
-
-**验证**：确认以下文件存在即可：
-
-```bash
-ls ~/.claude/skills/java-code-reviewer/skills/java-code-reviewer/SKILL.md
-```
-
-安装完成后重启 Claude Code 或等待技能自动加载。测试命令：
-
-```
-/java-code-reviewer:java-code-reviewer /path/to/your/java/project
-```
-
-或在对话中使用：
-
-```
-帮我审查这个项目 /path/to/your/java/project
-```
 
 ### 可选：lark-cli 安装
 
@@ -71,7 +72,7 @@ lark-cli auth login --recommend
 ### 方式一：通过 Slash 命令调用
 
 ```
-/java-code-reviewer:java-code-reviewer /path/to/project
+/java-code-reviewer /path/to/project
 ```
 
 ### 方式二：自然语言触发
